@@ -14,13 +14,15 @@ FROM python:3.12-slim
 RUN pip install --no-cache-dir "pillow>=11" "pytest>=8"
 
 WORKDIR /app
-COPY pyproject.toml /app/
-COPY src/ /app/src/
-COPY tests/ /app/tests/
-# Los documentos van adentro porque hay tests que los leen: uno falla si una rotura sin
-# defensa no esta escrita en LIMITES.md. La alternativa era que ese test se saltee cuando
-# no encuentra el archivo, y un guardian que se desactiva solo no es un guardian.
-COPY *.md CRITERIOS.sha256 /app/
+# Entra el repositorio entero, menos lo que saca .dockerignore. Se probo enumerando las
+# carpetas una por una y fallo dos veces: primero faltaban los .md y despues faltaban
+# docker-compose.yml y docs/, porque hay tests que leen esos archivos para comprobar que el
+# README no afirme cosas falsas. Cada vez el error aparecio recien adentro del contenedor.
+#
+# La alternativa era que esos tests se salteen cuando no encuentran el archivo. Un guardian
+# que se desactiva solo no es un guardian, y ademas haria que el numero de pruebas sea
+# distinto adentro y afuera, que es su propio olor.
+COPY . /app/
 ENV PYTHONPATH=/app/src PYTHONUNBUFFERED=1 PYTHONIOENCODING=utf-8
 
 ENTRYPOINT ["python", "-m", "remito"]
