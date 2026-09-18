@@ -1,0 +1,11 @@
+# Mapeo entre el identificador publico del proveedor (P01, P02...) y el proveedor real.
+# CRITERIOS.md seccion 11. Nunca se commitea.
+proveedores.local.*
+
+# Fotos sin tapar CUIT, razon social y domicilio. Solo entran al repo ya tachadas.
+datos/crudo/
+
+__pycache__/
+*.pyc
+.venv/
+.env

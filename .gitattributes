@@ -1,0 +1,13 @@
+# El congelado de CRITERIOS.md vale solo si su sha256 da igual en cualquier maquina.
+# Git for Windows instala core.autocrlf=true por defecto: al clonar reescribe los finales
+# de linea, cambian los bytes, y el hash deja de verificar. Justo cuando alguien lo
+# quiere comprobar. Medido en esta maquina el 18/09/2026.
+#
+# Regla general primero, excepciones despues: en gitattributes gana el ultimo patron
+# que coincide.
+
+* text=auto eol=lf
+
+# -text = git no toca estos bytes nunca, ni al guardar ni al sacar.
+CRITERIOS.md      -text
+CRITERIOS.sha256  -text
