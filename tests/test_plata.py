@@ -174,3 +174,66 @@ class TestCompararCostoUnitario:
     def test_cantidad_cero_no_se_deja_pasar(self) -> None:
         with pytest.raises(ValueError):
             comparar_costo_unitario(100, 0, 100, 1)
+
+
+class TestLoQueNoSePuedeSaberNoSeElige:
+    """`ImporteAmbiguo` existía documentado y sin levantarse nunca.
+
+    Lo encontró la consolidación del 18/09/2026: una clase con un docstring que decía "se
+    levanta en vez de elegir" mientras el código elegía igual. Es la misma falta que un
+    README que promete lo que no hay, pero adentro del código, donde nadie la ve hasta que
+    la busca.
+    """
+
+    def test_una_coma_con_tres_digitos_no_se_adivina(self) -> None:
+        """"1,234" es 1234 en formato yanqui y 1,234 en argentino. Mil veces distinto."""
+        from remito.plata import ImporteAmbiguo
+
+        with pytest.raises(ImporteAmbiguo):
+            parse_importe("1,234")
+
+    def test_pero_un_punto_con_tres_digitos_si(self) -> None:
+        """Acá sí se sabe: así está impreso el SUB-TOTAL en la factura de P01."""
+        assert parse_importe("38.068") == 3806800
+
+    def test_la_coma_con_dos_digitos_es_decimal_y_no_tiene_nada_de_ambiguo(self) -> None:
+        assert parse_importe("1,23") == 123
+
+    def test_con_los_dos_separadores_no_hay_ambiguedad(self) -> None:
+        """El último manda, y eso resuelve el caso sin adivinar."""
+        assert parse_importe("1.234,56") == 123456
+        assert parse_importe("1,234.56") == 123456
+
+    def test_ambiguo_es_distinto_de_invalido(self) -> None:
+        """Quien llame tiene que poder distinguir "esto no es un número" de "esto es un
+        número y no sé cuál": el segundo caso se le puede preguntar a un humano."""
+        from remito.plata import ImporteAmbiguo, ImporteInvalido
+
+        assert issubclass(ImporteAmbiguo, ValueError)
+        assert not issubclass(ImporteAmbiguo, ImporteInvalido)
+
+
+class TestUnaSolaFormaDeRedondear:
+    def test_las_cuatro_cuentas_que_estaban_sueltas_dan_lo_mismo(self) -> None:
+        """Antes de consolidar, este redondeo estaba escrito de cuatro formas distintas en
+        cuatro archivos. Este test fija que la única que quedó hace lo que hacían las cuatro."""
+        from remito.plata import redondear
+
+        assert redondear(3806823 * 210, 1000) == (3806823 * 210 + 500) // 1000
+        assert redondear(6225922 * 16, 1000) == (6225922 * 16 * 2 + 1000) // 2000
+        assert redondear(594521, 3) == (594521 * 2 + 3) // (3 * 2)
+
+    def test_redondea_para_arriba_en_el_medio_como_AFIP(self) -> None:
+        from remito.plata import redondear
+
+        assert redondear(5, 2) == 3  # 2,5 -> 3, no 2 como el redondeo al par de Python
+        assert redondear(7, 2) == 4
+        assert round(2.5) == 2  # lo que haría Python, para que se vea la diferencia
+
+    def test_no_acepta_negativos_en_vez_de_hacer_cualquier_cosa(self) -> None:
+        from remito.plata import redondear
+
+        with pytest.raises(ValueError):
+            redondear(-100, 3)
+        with pytest.raises(ValueError):
+            redondear(100, 0)

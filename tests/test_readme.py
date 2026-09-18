@@ -94,3 +94,40 @@ def test_no_promete_lo_que_no_hay() -> None:
             f"el README promete '{promesa}' en la apertura y el extractor no existe"
         )
     assert "no lee fotos" in README.lower()
+
+
+def test_toda_excepcion_definida_se_levanta_en_algun_lado() -> None:
+    """Una excepción con docstring que nunca se levanta es el código mintiendo sobre sí mismo.
+
+    Encontrado el 18/09/2026 consolidando: `ImporteAmbiguo` estaba definida con un docstring
+    que decía "se levanta en vez de elegir" y el parser elegía igual, en silencio. Alguien
+    que lee `plata.py` se lleva una impresión del comportamiento que el código no tiene.
+    """
+    import ast
+
+    src = RAIZ / "src" / "remito"
+    definidas, levantadas = {}, set()
+    for archivo in src.glob("*.py"):
+        arbol = ast.parse(archivo.read_text(encoding="utf-8"))
+        for n in ast.walk(arbol):
+            if isinstance(n, ast.ClassDef) and any(
+                isinstance(b, ast.Name) and ("Error" in b.id or "Exception" in b.id or b.id.endswith("ValueError"))
+                for b in n.bases
+            ):
+                definidas[n.name] = archivo.name
+            if isinstance(n, ast.Raise) and isinstance(n.exc, ast.Call):
+                if isinstance(n.exc.func, ast.Name):
+                    levantadas.add(n.exc.func.id)
+    huerfanas = {n: f for n, f in definidas.items() if n not in levantadas}
+    assert not huerfanas, f"definidas y nunca levantadas: {huerfanas}"
+
+
+# Acá había un test que buscaba redondeos escritos a mano con una expresión regular, para
+# que no volvieran a aparecer cuatro formas de la misma cuenta. Se borró el mismo día que se
+# escribió: marcaba `(cantidad + 1) // 2 + 1` de `validacion.py`, que es el techo de una
+# división y no un redondeo, y las tres líneas del test que cita las formas viejas a
+# propósito. Una expresión regular no distingue dos fórmulas enteras distintas, y un guardián
+# al que hay que irle agregando excepciones deja de significar algo.
+#
+# Lo que sí fija la propiedad está en `test_plata.py`: un test que comprueba que la única
+# implementación que quedó da lo mismo que las cuatro que había sueltas.

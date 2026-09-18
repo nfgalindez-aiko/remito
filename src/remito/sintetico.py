@@ -20,7 +20,7 @@ from datetime import date, timedelta
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
 
 from .comprobante import Comprobante, Linea, PieDeComprobante
-from .plata import Centavos, formatear, iva
+from .plata import Centavos, formatear, iva, redondear
 
 # Decimilésimas de peso: 10.000 = $1. Es la resolución con la que el proveedor liquida
 # antes de imprimir dos decimales.
@@ -43,11 +43,6 @@ PRODUCTOS = [
     ("1140", "MERENGADAS 118 G"),
     ("7033", "AGUILA LECHE 70 G"),
 ]
-
-
-def _redondear(numerador: int, denominador: int) -> int:
-    """Half-up, sin float. El mismo redondeo que usa AFIP."""
-    return (numerador * 2 + denominador) // (denominador * 2)
 
 
 @dataclass(frozen=True)
@@ -82,13 +77,13 @@ def generar(
                 codigo=codigo,
                 descripcion=descripcion,
                 cantidad=cantidad,
-                precio_unitario=Centavos(_redondear(precio_real, 100)),
-                subtotal=Centavos(_redondear(precio_real * cantidad, 100)),
+                precio_unitario=Centavos(redondear(precio_real, 100)),
+                subtotal=Centavos(redondear(precio_real * cantidad, 100)),
             )
         )
 
     subtotal = Centavos(sum(l.subtotal for l in lineas))
-    iibb = Centavos(_redondear(subtotal * 16, 1000))  # percepción de IIBB al 1,6%
+    iibb = Centavos(redondear(subtotal * 16, 1000))  # percepción de IIBB al 1,6%
     impuesto = iva(subtotal)
     pie = PieDeComprobante(
         subtotal=subtotal,

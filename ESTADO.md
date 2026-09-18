@@ -34,30 +34,14 @@ tres formas de romperla, sin red y sin API keys. **Verificado el 18/09/2026: 79 
 el comando hasta la salida, en una máquina con la imagen base y la caché de build borradas antes
 de cronometrar. `docker compose run --rm tests` corre las 258 pruebas adentro de la imagen.
 
-| Frente | Estado | Nota |
-|---|---|---|
-| `PLAN.md` — qué construir y por qué | cerrado | Escrito 18/09/2026 |
-| `CRITERIOS.md` — criterios congelados | **cerrado** | sha256 `7c99f2d8…7259`, 18/09/2026 |
-| Conjunto de datos etiquetado | bloqueado | Falta fotografiar. Es el activo del proyecto |
-| Demo por terminal (`cli.py`) | **cerrado** | Corre sin red ni API keys. Verificado por Python |
-| `docker compose` | **cerrado, corrido** | 73 s en máquina limpia. Dos servicios: `remito demo` y `tests` |
-| `README.md` | **reescrito** | Prometía leer fotos y decía "no hay base de datos" con SQLite andando. 13 tests lo vigilan |
-| `docs/adr/` | **2 documentos** | 0001 Postgres revertido; 0002 el extractor opcional y el costo de que los evals no corran en cada PR |
-| CI | **verde** | `docker compose run --rm tests` + la demo + el sha256, por el mismo camino que corre un evaluador |
-| Módulo de plata (`src/remito/plata.py`) | **cerrado** | Centavos enteros |
-| Generador de comprobantes sintéticos | **cerrado** | 4 casos de certificación, imágenes degradadas |
-| Base de datos (`base.py`) | **cerrado** | SQLite. Idempotencia por clave primaria, test de 12 hilos |
-| Alerta de aumento | **cerrado el motor** | Comparación cruzada sin dividir. Falta elegir el umbral, y por qué: `LIMITES.md` §11 |
-| Validación determinista (`validacion.py`) | **cerrado** | Los dos vetos y las mañas, con la factura real de fixture |
-| `LIMITES.md` | **cerrado** | 13 entradas, separando decisión / medido / sin medir |
-| Los 12 documentos rotos a propósito | **cerrado** | 6 las agarra la aritmética, 5 dependen del extractor, 1 no tiene defensa |
-| Bitácora y `RUNBOOK.md` | **cerrado** | Identificador por comprobante, y el RUNBOOK arranca por el síntoma |
-| `remito procesar <foto>` | **cerrado** | Camino completo: foto, T0, cuentas, base. Tres códigos de salida |
-| Tests | — | 307 en el contenedor, 1 falla esperada documentada |
-| Esquema de etiquetado | bloqueado | Sale del bloque de exploración, después de las fotos |
-| Baseline T0 (`baseline.py`) | **a medio hacer, y escrito** | Lee los sintéticos (98,8%, espejismo) y NO lee la foto real. `LIMITES.md` §13 |
-| Lectura de la foto con modelo | vía abierta | Se certifica el instrumento primero (`CRITERIOS.md` §7) |
-| Repo público | **sí** | github.com/nfgalindez-aiko/remito |
+| Frente | Estado |
+|---|---|
+| Cerrados y corriendo | criterios congelados, módulo de plata, validación con sus dos vetos, base con idempotencia, generador de comprobantes, las 12 roturas, demo, `docker compose`, CI, bitácora, `RUNBOOK.md`, `LIMITES.md`, 2 ADR |
+| **Baseline T0** | a medio hacer y escrito: lee los sintéticos, no lee la foto real. `LIMITES.md` §13 y §14 |
+| Conjunto de datos etiquetado | **bloqueado por las fotos.** Es el activo del proyecto |
+| Evals, baseline real, umbral de aumento | bloqueados por lo mismo |
+| Extractor con modelo, tope de gasto, prompts versionados | bloqueados por el crédito de API. `docs/adr/0002` |
+| Repo público | **sí**, github.com/nfgalindez-aiko/remito, CI en verde |
 
 **Quién es quién.** Nicolás decide y aporta el oficio (21 años de kiosco) y los papeles. El
 asistente hace el trabajo técnico. Los agentes, cuando se usen, sirven para **revisar y
@@ -116,34 +100,22 @@ le tapan líneas, ningún extractor puede recuperarlas y el fracaso se leería c
 instrumento no sirve. Tapar líneas es un caso distinto, donde lo correcto no es extraer bien
 sino no aprobar. Confundir los dos hace que la certificación no certifique nada.
 
+**R10 — Todo número que va a la prosa se recalcula desde el dato, con un test.** Causa: el
+18/09/2026 el asistente escribió "en 3 de 6 líneas" en dos lugares del ESTADO y en el fixture,
+cuando eran 4 de 6. La tabla de mediciones, generada por código, siempre estuvo bien; el error
+apareció al resumirla a mano, colapsando dos líneas idénticas (las dos de Kokis, que fallan las
+dos por el mismo centavo). Lo encontró el test que recontaba el dato en vez de repetir la
+afirmación. `CRITERIOS.md` se salvó porque ahí sólo está la tabla, sin resumen en prosa.
+
+**R11 — La aritmética no puede atrapar un número inventado que ella misma valida.** Si falta el
+TOTAL en la foto y el modelo lo inventa sumando las líneas, cierra contra el SUB-TOTAL y pasa
+los dos vetos. Ningún chequeo de consistencia interna ve eso. La única defensa es que el
+extractor conteste "no está", y eso hay que medirlo aparte.
+
 **R12 — Un caso de prueba de una entrada rota necesita tres piezas, no dos: la verdad, la
 lectura que esa entrada produciría, y la entrada.** Con la verdad y la entrada sola no se puede
 probar nada, porque el papel casi siempre está bien: lo que está mal es lo que alguien leyó de
 él. Causa: se escribió el catálogo de roturas con dos piezas y los tests lo rechazaron.
-
-**R17 — Un identificador que una persona va a copiar a mano no lleva O, 0, I, l ni 1.** Alguien
-lo anota en el margen del papel y después lo tipea, o lo dice por teléfono. Perder un poco de
-espacio de combinaciones sale más barato que un llamado para deletrear un UUID.
-
-**R16 — Las equivocaciones se commitean y después se corrigen, no se arreglan antes de
-commitear.** El 18/09/2026 se revirtieron tres decisiones reales —Postgres, un caso de prueba mal
-diseñado, el catálogo de roturas— y las tres se corrigieron antes de guardarlas, así que el
-historial no las muestra. Siete de los nueve evaluadores nombraron los borrados como la señal
-número uno, y el repo iba 3.990 líneas agregadas contra 71 borradas. No se fabrica un borrado
-para que la estadística quede linda; se deja de esconderlos.
-
-**R15 — Verificar por el camino que el README promete, no por el que a uno le queda cómodo.**
-Los tests pasaban con `python -m pytest` en la máquina y fallaban con
-`docker compose run --rm tests`, que es el comando que dice el README. Se empujó igual. Lo
-encontró el CI. Por eso el CI corre por docker y no sobre un Python instalado a mano: un tilde
-verde sobre un camino que nadie más usa no significa nada.
-
-**R14 — Un README que afirma algo falso en un renglón no se cree en ninguno.** Los nueve lo
-nombraron con esas palabras: verifican una afirmación con grep, y si falla una, descartan las
-demás. El 18/09/2026 este repo se publicó diciendo "no hay base de datos" con `base.py` ya
-andando, y prometiendo en la primera línea que entra una foto y sale el stock cuando no hay
-extractor. Ahora `tests/test_readme.py` verifica cada número y cada nombre propio del README
-contra el código, y corrido contra el README viejo falla en cinco puntos.
 
 **R13 — Lo que se va a publicar se audita antes del primer `push`, no después.** Un dato que
 entra en un commit y se empuja queda público para siempre, aunque se borre en el commit
@@ -153,30 +125,45 @@ incluida su maña de facturación; se reemplazó por `P01` en los archivos y en 
 de conectar el remoto. Reemplazar un texto en un historial que nadie clonó no es squashear: los
 9 commits conservan sus fechas, sus mensajes y sus diffs.
 
-**R11 — La aritmética no puede atrapar un número inventado que ella misma valida.** Si falta el
-TOTAL en la foto y el modelo lo inventa sumando las líneas, cierra contra el SUB-TOTAL y pasa
-los dos vetos. Ningún chequeo de consistencia interna ve eso. La única defensa es que el
-extractor conteste "no está", y eso hay que medirlo aparte.
+**R14 — Un README que afirma algo falso en un renglón no se cree en ninguno.** Los nueve lo
+nombraron con esas palabras: verifican una afirmación con grep, y si falla una, descartan las
+demás. El 18/09/2026 este repo se publicó diciendo "no hay base de datos" con `base.py` ya
+andando, y prometiendo en la primera línea que entra una foto y sale el stock cuando no hay
+extractor. Ahora `tests/test_readme.py` verifica cada número y cada nombre propio del README
+contra el código, y corrido contra el README viejo falla en cinco puntos.
 
-**R10 — Todo número que va a la prosa se recalcula desde el dato, con un test.** Causa: el
-18/09/2026 el asistente escribió "en 3 de 6 líneas" en dos lugares del ESTADO y en el fixture,
-cuando eran 4 de 6. La tabla de mediciones, generada por código, siempre estuvo bien; el error
-apareció al resumirla a mano, colapsando dos líneas idénticas (las dos de Kokis, que fallan las
-dos por el mismo centavo). Lo encontró el test que recontaba el dato en vez de repetir la
-afirmación. `CRITERIOS.md` se salvó porque ahí sólo está la tabla, sin resumen en prosa.
+**R15 — Verificar por el camino que el README promete, no por el que a uno le queda cómodo.**
+Los tests pasaban con `python -m pytest` en la máquina y fallaban con
+`docker compose run --rm tests`, que es el comando que dice el README. Se empujó igual. Lo
+encontró el CI. Por eso el CI corre por docker y no sobre un Python instalado a mano: un tilde
+verde sobre un camino que nadie más usa no significa nada.
+
+**R16 — Las equivocaciones se commitean y después se corrigen, no se arreglan antes de
+commitear.** El 18/09/2026 se revirtieron tres decisiones reales —Postgres, un caso de prueba mal
+diseñado, el catálogo de roturas— y las tres se corrigieron antes de guardarlas, así que el
+historial no las muestra. Siete de los nueve evaluadores nombraron los borrados como la señal
+número uno, y el repo iba 3.990 líneas agregadas contra 71 borradas. No se fabrica un borrado
+para que la estadística quede linda; se deja de esconderlos.
+
+**R17 — Un identificador que una persona va a copiar a mano no lleva O, 0, I, l ni 1.** Alguien
+lo anota en el margen del papel y después lo tipea, o lo dice por teléfono. Perder un poco de
+espacio de combinaciones sale más barato que un llamado para deletrear un UUID.
 
 ---
 
 ## 3. Pendientes
 
+Fecha de corte: **9 de octubre de 2026**. Quedan 11 días.
+
 | Qué | Dueño | Por qué espera |
 |---|---|---|
-| Juntar y fotografiar los 40-100 comprobantes | Nicolás | Es el activo del proyecto; sin esto no hay nada |
-| Tapar CUIT, razón social y domicilio del destinatario antes de que una foto entre al repo | Nicolás / asistente | `CRITERIOS.md` §11 |
-| **Habilitar WSL y terminar el arranque de Docker** | Nicolás | `wsl --install` como administrador y reiniciar. La característica `Microsoft-Windows-Subsystem-Linux` está deshabilitada en Windows; por eso Docker Desktop no llega ni a la pantalla de licencia |
+| **Fotografiar los 40-100 comprobantes**, en `datos/crudo/` | Nicolás | Es el activo. Bloquea los evals, el baseline real, el umbral de aumento y terminar T0. Instrucciones en `datos/README.md`; las de dos hojas van con dos fotos |
+| **Crédito de API en console.anthropic.com** | Nicolás | La suscripción de Claude no es lo mismo que crédito de API. Sin esto no hay extractor |
+| Tapar CUIT y domicilio de las fotos antes de que entren al repo | asistente | `CRITERIOS.md` §11. `datos/crudo/` ya está en `.gitignore` |
 | Esquema de etiquetado | asistente | Sale del bloque de exploración, después de las fotos |
+| Terminar T0 sobre fotos reales | asistente | Con una sola foto sería sobreajustar. `LIMITES.md` §13 |
 | Elegir el umbral mínimo de la alerta de aumento | asistente | Sale del historial real. Hoy sería inventar un número: `LIMITES.md` §11 |
-| Publicar el repo en GitHub | Nicolás | Cuando haya algo que valga la pena mostrar |
+| Repartir el trabajo que queda en días reales | asistente | Los 18 commits son todos del mismo día. No se arregla trabajando más rápido |
 
 ---
 
@@ -618,7 +605,47 @@ que si la mercadería entra.
 
 ---
 
-## 16. Cómo actualizar esto
+## 16. Sesión 18/09/2026 — consolidación — CERRADA
+
+Sin fotos y sin crédito de API, se revisó lo que hay con ojos de evaluador en vez de agregar.
+Cuatro cosas encontradas, y ninguna era un bug de comportamiento:
+
+**`ImporteAmbiguo` estaba definida, documentada con cariño, y nunca se levantaba.** Su docstring
+decía "se levanta en vez de elegir" mientras `parse_importe` elegía igual: `"1,234"` lo resolvía
+como mil doscientos treinta y cuatro sin preguntar, cuando en formato argentino sería un importe
+de tres decimales. Mil veces distinto. Es la misma falta que un README que promete lo que no hay,
+pero adentro del código, donde nadie la ve hasta que la busca. Ahora se levanta, y hay un test
+que falla si alguna excepción del paquete vuelve a quedar huérfana.
+
+**La misma cuenta de redondeo estaba escrita de cuatro formas distintas en cuatro archivos**:
+`(neto * alicuota + 500) // 1000`, `(sub * 16 * 2 + 1000) // 2000`, `(num * 2 + den) // (den * 2)`
+y una cuarta en un test. Las cuatro correctas y las cuatro distintas, que es peor que una sola
+mal: cuatro lugares donde tocar el día que el redondeo cambie. Quedó una, `plata.redondear`, con
+un test que comprueba que da lo mismo que las cuatro que había.
+
+**Se escribió un guardián contra eso y se borró el mismo día.** Buscaba redondeos a mano con una
+expresión regular y marcaba `(cantidad + 1) // 2 + 1`, que es el techo de una división y no un
+redondeo. Una expresión regular no distingue dos fórmulas enteras distintas, y un guardián al que
+hay que irle agregando excepciones deja de significar algo. Mejor ninguno que uno en el que nadie
+confía. El motivo quedó escrito donde estaba el test.
+
+**Las reglas estaban fuera de orden** (R9, R12, R17, R16, R15...) porque se fueron agregando
+arriba. Se citan por número, así que se ordenaron. Y la sección 1 pasó de 59 a 43 líneas, que era
+lo que prometía su propio título.
+
+**Lo que se revisó y estaba bien:** ni un TODO en todo el repo; una sola función pública sin uso,
+que era la excepción huérfana; los dos `except Exception` son manejadores de limpieza que
+relanzan, no tragan errores; las dos dependencias se usan y están justificadas.
+
+**La asimetría deliberada salió sola**, medida en explicación por línea de código: `plata.py`
+0,70 y `cli.py` 0,10. El módulo de plata con relieve y el de presentación pelado, que es lo que
+pide `PLAN.md`. No hubo que forzarla.
+
+Los borrados pasaron de 75 a 1 a **41 a 1**, entre la reescritura del README y esto.
+
+---
+
+## 17. Cómo actualizar esto
 
 Una sección nueva por sesión de trabajo, numerada correlativa, con fecha en el título y su
 estado. La más nueva abajo. Las viejas no se tocan.

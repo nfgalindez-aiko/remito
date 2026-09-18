@@ -32,7 +32,7 @@ from typing import Callable
 from PIL import Image, ImageFilter
 
 from .comprobante import Comprobante, Linea, PieDeComprobante
-from .plata import Centavos, iva
+from .plata import Centavos, iva, redondear
 from .sintetico import caso_sin_senal, degradar, dibujar, generar
 from .validacion import Chequeo
 
@@ -72,7 +72,7 @@ def _pie_inventado(lineas: tuple[Linea, ...]) -> PieDeComprobante:
     """
     subtotal = Centavos(sum(l.subtotal for l in lineas))
     impuesto = iva(subtotal)
-    iibb = Centavos((subtotal * 16 * 2 + 1000) // 2000)
+    iibb = Centavos(redondear(subtotal * 16, 1000))  # percepción de IIBB al 1,6%
     return PieDeComprobante(
         subtotal=subtotal, iva=impuesto, percepcion_iibb=iibb,
         total=Centavos(subtotal + impuesto + iibb),

@@ -17,7 +17,7 @@ from remito.base import (
     historial,
 )
 from remito.comprobante import Comprobante, Linea, PieDeComprobante
-from remito.plata import Centavos
+from remito.plata import Centavos, redondear
 from remito.validacion import Chequeo, DesvioConocido, Veredicto, revisar
 
 import dataclasses
@@ -40,11 +40,10 @@ def compra(codigo: str, cantidad: int, subtotal: int, numero: str, fecha: str) -
     return Comprobante(
         proveedor="P01", tipo="A", punto_venta="0026", numero=numero,
         fecha=date.fromisoformat(fecha),
-        # El precio unitario se redondea half-up, como lo imprime el papel, no con
-        # división entera: si no, el test de abajo compararía un redondeo que no existe.
+        # El precio unitario se redondea como lo imprime el papel, no con división entera:
+        # si no, el test de abajo compararía un redondeo que no existe.
         lineas=(Linea(codigo, "KOKIS MEMBRILLITO 500 G", cantidad,
-                      Centavos((subtotal * 2 + cantidad) // (cantidad * 2)),
-                      Centavos(subtotal)),),
+                      Centavos(redondear(subtotal, cantidad)), Centavos(subtotal)),),
         pie=PieDeComprobante(subtotal=Centavos(subtotal), total=Centavos(subtotal),
                              unidades=cantidad),
     )

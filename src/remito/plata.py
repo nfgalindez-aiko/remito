@@ -94,10 +94,25 @@ def parse_importe(texto: str) -> Centavos:
         sep = "." if puntos else ","
         cuantos = puntos or comas
         entero, _, frac = limpio.rpartition(sep)
+        if len(frac) == 3 and cuantos == 1 and sep == ",":
+            # Acá no se puede saber, y por eso no se elige.
+            #
+            # "1,234" es mil doscientos treinta y cuatro si el papel usa el formato yanqui,
+            # o un importe de tres decimales si usa el argentino. Lo segundo no existe en
+            # plata, pero tampoco se puede descartar que el OCR haya comido un dígito de
+            # "1,2345" o agregado uno a "1,23". Un punto con tres dígitos sí se resuelve
+            # -abajo- porque el papel de P01 imprime "38.068" y son miles; una coma con
+            # tres dígitos no aparece nunca en un comprobante argentino.
+            #
+            # Elegir uno de los dos significa entregar un número mil veces distinto del
+            # otro, plausible, que después cierra o no cierra por casualidad.
+            raise ImporteAmbiguo(
+                f"una coma con tres dígitos puede ser miles o decimales: {texto!r}"
+            )
         if cuantos > 1 or len(frac) == 3:
-            # Tres dígitos después del separador, o varios separadores: son miles.
-            # "38.068" son treinta y ocho mil sesenta y ocho, no 38 pesos con 68 milésimos.
-            # La plata argentina impresa tiene dos decimales, nunca tres.
+            # Varios separadores, o un punto con tres dígitos: son miles.
+            # "38.068" son treinta y ocho mil sesenta y ocho, no 38 pesos con 68 milésimos:
+            # así está impreso en la factura de P01.
             entero, frac = _quitar_miles(limpio, sep, texto), ""
         elif len(frac) > 3:
             raise ImporteInvalido(f"demasiados dígitos después del separador: {texto!r}")
@@ -127,6 +142,27 @@ def formatear(centavos: int) -> str:
     return f"{signo}{entero:,}".replace(",", ".") + f",{resto:02d}"
 
 
+def redondear(numerador: int, denominador: int) -> int:
+    """`numerador / denominador` redondeado half-up, sin que aparezca un float.
+
+    Half-up y no al par más cercano: AFIP redondea 2,675 a 2,68, y Python redondea al par,
+    que da 2,67. Son convenciones distintas y la que manda es la del papel.
+
+    Existe porque esta misma cuenta estaba escrita de cuatro formas distintas en cuatro
+    archivos: `(neto * alicuota + 500) // 1000`, `(sub * 16 * 2 + 1000) // 2000`,
+    `(num * 2 + den) // (den * 2)` y una cuarta en un test. Todas correctas y todas
+    distintas, que es peor que una sola mal: cuatro lugares donde arreglar el día que el
+    redondeo tenga que cambiar.
+
+    Sólo para positivos. Con negativos `//` redondea hacia abajo y habría que decidir qué
+    significa half-up en ese lado; no hace falta porque las notas de crédito están fuera de
+    alcance (`LIMITES.md` §7).
+    """
+    if denominador <= 0 or numerador < 0:
+        raise ValueError(f"redondear sólo maneja positivos: {numerador}/{denominador}")
+    return (numerador * 2 + denominador) // (denominador * 2)
+
+
 def iva(neto: Centavos, alicuota_por_mil: int = 210) -> Centavos:
     """IVA con redondeo half-up, sin float en ningún paso.
 
@@ -136,7 +172,7 @@ def iva(neto: Centavos, alicuota_por_mil: int = 210) -> Centavos:
     Verificado contra P01 2026-09-17: neto 38.068,23 -> 7.994,33, que es lo que imprime
     el papel, al centavo.
     """
-    return Centavos((neto * alicuota_por_mil + 500) // 1000)
+    return Centavos(redondear(neto * alicuota_por_mil, 1000))
 
 
 def comparar_costo_unitario(sub_a: int, cant_a: int, sub_b: int, cant_b: int) -> int:
