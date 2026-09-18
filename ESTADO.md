@@ -53,7 +53,7 @@ hay Docker en la máquina. Por Python corre y está verificado.
 | Esquema de etiquetado | bloqueado | Sale del bloque de exploración, después de las fotos |
 | Baseline T0 (OCR+regex, sin modelo) | vía abierta | No se toca hasta tener datos |
 | Lectura de la foto con modelo | vía abierta | Se certifica el instrumento primero (`CRITERIOS.md` §7) |
-| Repo público | no | 10 commits locales, sin remoto |
+| Repo público | **remoto conectado, sin empujar** | `github.com/nfgalindez-aiko/remito`. No se empuja hasta verificar Docker: el README afirma que `docker compose` anda |
 
 **Quién es quién.** Nicolás decide y aporta el oficio (21 años de kiosco) y los papeles. El
 asistente hace el trabajo técnico. Los agentes, cuando se usen, sirven para **revisar y
@@ -116,6 +116,14 @@ sino no aprobar. Confundir los dos hace que la certificación no certifique nada
 lectura que esa entrada produciría, y la entrada.** Con la verdad y la entrada sola no se puede
 probar nada, porque el papel casi siempre está bien: lo que está mal es lo que alguien leyó de
 él. Causa: se escribió el catálogo de roturas con dos piezas y los tests lo rechazaron.
+
+**R13 — Lo que se va a publicar se audita antes del primer `push`, no después.** Un dato que
+entra en un commit y se empuja queda público para siempre, aunque se borre en el commit
+siguiente. Se revisa: CUIT, nombre, domicilio, código de cliente, `.env`, claves, y **el nombre
+de terceros que no pidieron aparecer**. El 18/09/2026 el proveedor real aparecía 19 veces,
+incluida su maña de facturación; se reemplazó por `P01` en los archivos y en el historial antes
+de conectar el remoto. Reemplazar un texto en un historial que nadie clonó no es squashear: los
+9 commits conservan sus fechas, sus mensajes y sus diffs.
 
 **R11 — La aritmética no puede atrapar un número inventado que ella misma valida.** Si falta el
 TOTAL en la foto y el modelo lo inventa sumando las líneas, cierra contra el SUB-TOTAL y pasa
@@ -384,7 +392,31 @@ subtotal y la agarra otro, el test falla y lo dice.
 
 ---
 
-## 11. Cómo actualizar esto
+## 11. Sesión 18/09/2026 — anonimizar antes de publicar — CERRADA
+
+Nicolás creó `github.com/nfgalindez-aiko/remito`, público. Antes de conectar el remoto se
+auditó lo que se iba a empujar: ni un CUIT, ni su nombre, ni su domicilio, ni el código de
+cliente, ni un `.env` en ningún commit. 31 archivos.
+
+Lo que sí había: **el nombre real del proveedor, 19 veces**, incluida la frase "redondea el
+total un centavo para abajo, siempre". Es una empresa real a la que Nicolás le sigue comprando.
+Preguntado, decidió que no hace falta que se sepa quién es.
+
+Se reemplazó por `P01` en los archivos **y en el historial**, con `filter-branch`, antes del
+primer `push`. Se conservan los 9 commits con sus fechas, sus mensajes y sus diffs: lo único
+que cambió son 16 cadenas de texto y los hashes, que nadie tenía todavía. Verificado después:
+cero apariciones en cualquier objeto de la base de git, no sólo en los archivos de trabajo.
+
+`CRITERIOS.md` salió ileso porque ya usaba `P01` desde el principio: el congelado sigue
+verificando con el mismo sha256 `7c99f2d8…7259`. Si el documento congelado hubiera nombrado al
+proveedor, no se habría podido anonimizar sin romper la única cosa que lo hace valer.
+
+Queda como R13. El remoto está conectado y **no se empujó**: el README afirma que
+`docker compose run --rm remito demo` anda, y eso todavía no se corrió nunca.
+
+---
+
+## 12. Cómo actualizar esto
 
 Una sección nueva por sesión de trabajo, numerada correlativa, con fecha en el título y su
 estado. La más nueva abajo. Las viejas no se tocan.
