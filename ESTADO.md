@@ -48,11 +48,12 @@ hay Docker en la máquina. Por Python corre y está verificado.
 | Alerta de aumento | **cerrado el motor** | Comparación cruzada sin dividir. Falta elegir el umbral, y por qué: `LIMITES.md` §11 |
 | Validación determinista (`validacion.py`) | **cerrado** | Los dos vetos y las mañas, con la factura real de fixture |
 | `LIMITES.md` | **cerrado** | 13 entradas, separando decisión / medido / sin medir |
-| Tests | — | 198, todos en verde |
+| Los 12 documentos rotos a propósito | **cerrado** | 6 las agarra la aritmética, 5 dependen del extractor, 1 no tiene defensa |
+| Tests | — | 258, todos en verde |
 | Esquema de etiquetado | bloqueado | Sale del bloque de exploración, después de las fotos |
 | Baseline T0 (OCR+regex, sin modelo) | vía abierta | No se toca hasta tener datos |
 | Lectura de la foto con modelo | vía abierta | Se certifica el instrumento primero (`CRITERIOS.md` §7) |
-| Repo público | no | 9 commits locales, sin remoto |
+| Repo público | no | 10 commits locales, sin remoto |
 
 **Quién es quién.** Nicolás decide y aporta el oficio (21 años de kiosco) y los papeles. El
 asistente hace el trabajo técnico. Los agentes, cuando se usen, sirven para **revisar y
@@ -111,6 +112,11 @@ le tapan líneas, ningún extractor puede recuperarlas y el fracaso se leería c
 instrumento no sirve. Tapar líneas es un caso distinto, donde lo correcto no es extraer bien
 sino no aprobar. Confundir los dos hace que la certificación no certifique nada.
 
+**R12 — Un caso de prueba de una entrada rota necesita tres piezas, no dos: la verdad, la
+lectura que esa entrada produciría, y la entrada.** Con la verdad y la entrada sola no se puede
+probar nada, porque el papel casi siempre está bien: lo que está mal es lo que alguien leyó de
+él. Causa: se escribió el catálogo de roturas con dos piezas y los tests lo rechazaron.
+
 **R11 — La aritmética no puede atrapar un número inventado que ella misma valida.** Si falta el
 TOTAL en la foto y el modelo lo inventa sumando las líneas, cierra contra el SUB-TOTAL y pasa
 los dos vetos. Ningún chequeo de consistencia interna ve eso. La única defensa es que el
@@ -131,9 +137,8 @@ afirmación. `CRITERIOS.md` se salvó porque ahí sólo está la tabla, sin resu
 |---|---|---|
 | Juntar y fotografiar los 40-100 comprobantes | Nicolás | Es el activo del proyecto; sin esto no hay nada |
 | Tapar CUIT, razón social y domicilio del destinatario antes de que una foto entre al repo | Nicolás / asistente | `CRITERIOS.md` §11 |
-| **Instalar Docker Desktop** | Nicolás | Ahora es lo más urgente: hay un `docker-compose.yml` escrito que nadie corrió nunca. No se publica sin haberlo visto arrancar |
+| **Habilitar WSL y terminar el arranque de Docker** | Nicolás | `wsl --install` como administrador y reiniciar. La característica `Microsoft-Windows-Subsystem-Linux` está deshabilitada en Windows; por eso Docker Desktop no llega ni a la pantalla de licencia |
 | Esquema de etiquetado | asistente | Sale del bloque de exploración, después de las fotos |
-| Los 12 documentos rotos a propósito | asistente | El generador ya da 4; faltan 8 roturas más |
 | Elegir el umbral mínimo de la alerta de aumento | asistente | Sale del historial real. Hoy sería inventar un número: `LIMITES.md` §11 |
 | Publicar el repo en GitHub | Nicolás | Cuando haya algo que valga la pena mostrar |
 
@@ -344,7 +349,42 @@ real subió.
 
 ---
 
-## 10. Cómo actualizar esto
+## 10. Sesión 18/09/2026 — las doce roturas, y hasta dónde llega la tesis — CERRADA
+
+`src/remito/roturas.py`. Cada rotura tiene tres piezas, y la del medio es la que hace que el
+catálogo sirva: **la verdad** (lo que dice el papel, siempre impecable), **la lectura** (lo que
+un lector ingenuo produciría con la entrada rota) y la imagen cuando corresponde.
+
+**Error de diseño propio, encontrado por mis propios tests.** La primera versión devolvía sólo
+la verdad y la imagen. Con eso es imposible probar nada: el papel de una foto movida está
+perfecto, la que está mal es la lectura. El test de `linea_tapada` falló pidiendo justamente
+esa pieza que faltaba. → R12.
+
+**El reparto, que es el resultado que importa:**
+
+| | |
+|---|---|
+| 6 de 12 | las agarra la aritmética |
+| 5 de 12 | la lectura sale **consistente consigo misma y mal**: sólo la salva que el extractor diga "no sé" |
+| 1 de 12 | sin defensa: el papel que nunca se leyó |
+
+**La validación determinista cubre la mitad.** Eso no es un mal resultado —la otra mitad son
+roturas de la foto, no de los números— pero decir "la aritmética veta al modelo" sin decir esto
+sería vender algo que no es. Las cinco del medio son todas la misma familia: quien lee arma el
+pie sumando lo que vio, le da consistente porque lo calculó de ahí, y pasa los cuatro chequeos.
+
+**Segundo error propio, y el test lo encontró:** la rotura sin defensa no estaba escrita en
+`LIMITES.md`. Hay un test que lo verifica y falló. Ahora es `LIMITES.md` §12, y es la peor de
+las doce: produce una lectura buena y una ausencia, y una ausencia no se examina.
+
+**No se afirma el reparto 6/5/1 en ningún assert.** Un número a mano en un test invita a
+reclasificar una rotura para que el número cierre. Lo que impide mentir con la clasificación es
+que cada etiqueta se verifica rotura por rotura: si el catálogo dice que la agarra el veto del
+subtotal y la agarra otro, el test falla y lo dice.
+
+---
+
+## 11. Cómo actualizar esto
 
 Una sección nueva por sesión de trabajo, numerada correlativa, con fecha en el título y su
 estado. La más nueva abajo. Las viejas no se tocan.

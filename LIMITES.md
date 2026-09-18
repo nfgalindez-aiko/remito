@@ -108,7 +108,24 @@ sería uno de los que eligen los modelos —5, 10, 30— sin nada detrás.
 Mientras tanto la función informa todo y el que llama decide. Cuando exista el historial, el
 umbral se elige con él y se escribe con su medición al lado.
 
-## 12. La degradación sintética no es una foto de un teléfono barato — **limitación del método**
+## 12. Dos papeles en la misma foto: uno se pierde en silencio — **sin defensa, y es la peor**
+
+Si hay dos comprobantes apoyados uno al lado del otro y quien lee agarra sólo el de la
+izquierda, lo que devuelve está impecable: cierra contra su propio subtotal, pasa los cuatro
+chequeos y entra bien. La mercadería del otro papel nunca se cargó, y **no hay chequeo posible
+sobre un documento que nadie leyó**: no existe el número con el cual compararlo.
+
+Es distinta de todas las demás roturas de la lista. Las otras producen una lectura mala que se
+puede examinar. Ésta produce una lectura buena y una ausencia, y una ausencia no se examina.
+
+La defensa no es aritmética ni del modelo: es una foto por papel. Es una regla de mostrador y
+no de software, y eso también es un límite, porque significa que el sistema depende de que
+alguien haga bien una cosa que el sistema no puede verificar.
+
+Está en el catálogo como `dos_papeles_en_la_misma_foto` (`src/remito/roturas.py`), clasificada
+`NINGUNA`, y hay un test que falla si esta sección desaparece.
+
+## 13. La degradación sintética no es una foto de un teléfono barato — **limitación del método**
 
 El generador ensucia imágenes limpias con rotación, sombra y desenfoque. Eso sirve para ordenar
 casos de más fácil a más difícil, pero **no** modela el sensor de un teléfono barato: el ruido, la
@@ -117,7 +134,7 @@ compresión y el color son distintos.
 Cualquier número que salga de imágenes degradadas por código es un orden de magnitud, no una
 medición de la vida real. Lo que se mide de verdad se mide sobre fotos de verdad.
 
-## 13. El conjunto de datos es de un solo kiosco, de un solo partido — **limitación del método**
+## 14. El conjunto de datos es de un solo kiosco, de un solo partido — **limitación del método**
 
 Entre 40 y 100 comprobantes, de los proveedores que le venden a un kiosco de San Clemente del
 Tuyú. Distribuidoras de golosinas, mayormente. No hay farmacia, no hay corralón, no hay
@@ -127,7 +144,7 @@ Un resultado bueno acá no dice nada sobre un remito de repuestos de auto. El bl
 reserva al menos dos proveedores enteros justamente para tener alguna evidencia de generalización,
 pero dos proveedores nuevos son dos, no una muestra.
 
-## 14. El bloque virgen alcanza para distinguir "anda" de "está roto", nada más — **límite calculado**
+## 15. El bloque virgen alcanza para distinguir "anda" de "está roto", nada más — **límite calculado**
 
 Con doce a veinte documentos en el bloque virgen, el intervalo de confianza al 95% sobre la
 proporción de documentos correctos mide entre 30 y 40 puntos de ancho. Aun con un 100% de
