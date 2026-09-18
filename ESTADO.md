@@ -27,8 +27,10 @@ hallazgo técnico real (sección 5) y el módulo de plata andando con 57 tests (
 | `PLAN.md` — qué construir y por qué | cerrado | Escrito 18/09/2026 |
 | `CRITERIOS.md` — criterios congelados | **cerrado** | sha256 `7c99f2d8…7259`, 18/09/2026 |
 | Conjunto de datos etiquetado | bloqueado | Falta fotografiar. Es el activo del proyecto |
-| Módulo de plata (`src/remito/plata.py`) | **cerrado** | Centavos enteros, 57 tests en verde |
+| Módulo de plata (`src/remito/plata.py`) | **cerrado** | Centavos enteros |
+| Generador de comprobantes sintéticos | **cerrado** | 4 casos de certificación, imágenes degradadas |
 | Validación determinista (`validacion.py`) | **cerrado** | Los dos vetos y las mañas, con la factura real de fixture |
+| Tests | — | 159, todos en verde |
 | Esquema de etiquetado | bloqueado | Sale del bloque de exploración, después de las fotos |
 | Baseline T0 (OCR+regex, sin modelo) | vía abierta | No se toca hasta tener datos |
 | Lectura de la foto con modelo | vía abierta | Se certifica el instrumento primero (`CRITERIOS.md` §7) |
@@ -87,6 +89,16 @@ deja pasar errores reales en los otros ocho.
 La lista de mañas se ajusta con datos, así que sólo puede crecer con documentos de exploración y
 entrenamiento. Una maña aprendida mirando el bloque virgen es fuga (R6).
 
+**R9 — Un caso de prueba "con señal" tiene que llevar su verdad adentro de la imagen.** Si se
+le tapan líneas, ningún extractor puede recuperarlas y el fracaso se leería como que el
+instrumento no sirve. Tapar líneas es un caso distinto, donde lo correcto no es extraer bien
+sino no aprobar. Confundir los dos hace que la certificación no certifique nada.
+
+**R11 — La aritmética no puede atrapar un número inventado que ella misma valida.** Si falta el
+TOTAL en la foto y el modelo lo inventa sumando las líneas, cierra contra el SUB-TOTAL y pasa
+los dos vetos. Ningún chequeo de consistencia interna ve eso. La única defensa es que el
+extractor conteste "no está", y eso hay que medirlo aparte.
+
 **R10 — Todo número que va a la prosa se recalcula desde el dato, con un test.** Causa: el
 18/09/2026 el asistente escribió "en 3 de 6 líneas" en dos lugares del ESTADO y en el fixture,
 cuando eran 4 de 6. La tabla de mediciones, generada por código, siempre estuvo bien; el error
@@ -104,8 +116,8 @@ afirmación. `CRITERIOS.md` se salvó porque ahí sólo está la tabla, sin resu
 | Tapar CUIT, razón social y domicilio del destinatario antes de que una foto entre al repo | Nicolás / asistente | `CRITERIOS.md` §11 |
 | Instalar Docker Desktop | Nicolás | Requisito nº1 de los evaluadores; hoy no está en la máquina |
 | Esquema de etiquetado | asistente | Sale del bloque de exploración, después de las fotos |
-| Generador de comprobantes sintéticos para certificar el instrumento | asistente | `CRITERIOS.md` §7. No depende de las fotos: se puede hacer ya |
-| `LIMITES.md` | asistente | Varias entradas ya decididas y sin escribir (R3, R4, QR de AFIP, dos hojas) |
+| `LIMITES.md` | asistente | Seis entradas ya decididas y sin escribir (R3, R4, R11, QR de AFIP, dos hojas, cantidades fraccionarias) |
+| Los 12 documentos rotos a propósito | asistente | El generador ya da 4; faltan 8 roturas más |
 | Publicar el repo en GitHub | Nicolás | Cuando haya algo que valga la pena mostrar |
 
 ---
@@ -206,7 +218,34 @@ forzada.
 
 ---
 
-## 7. Cómo actualizar esto
+## 7. Sesión 18/09/2026 — el generador y un límite que duele — CERRADA
+
+Se escribió `sintetico.py`: comprobantes inventados con la respuesta conocida, dibujados como
+una factura y degradados hasta que parezcan una foto de celular (torcida, con sombra, con
+desenfoque, sobre la mesa). Sirve para certificar que el medidor mide antes de gastar un papel
+real, y es la mitad de los 12 documentos rotos a propósito que pide `PLAN.md`.
+
+La aritmética del generador imita la del proveedor: el precio se calcula con cuatro decimales y
+se imprime con dos, así que aparecen solas las líneas donde `precio impreso × cantidad` no da el
+subtotal. Un generador que hiciera las cuentas "bien" produciría comprobantes más limpios que
+los reales y certificaría un medidor que después falla con el primer papel del kiosco.
+
+**Error de diseño propio, corregido:** el caso "con señal" se había hecho con la hoja superpuesta
+tapando 4 de 5 líneas. Así la verdad no está en la imagen y ningún extractor puede recuperarla:
+el caso no certificaba nada. Se separó en dos casos distintos. → R9.
+
+**Límite encontrado, y es el más importante hasta ahora.** El caso de fuga —la foto que se comió
+la tira de totales— es el único modo de falla que la validación aritmética **no puede atrapar**.
+Si el modelo no ve el TOTAL y lo inventa sumando las líneas, ese número inventado cierra
+perfecto contra el SUB-TOTAL y pasa los dos vetos. La tesis del proyecto es que las cuentas
+pueden vetar al modelo; acá no pueden, y hay que decirlo. → R11.
+
+La defensa no puede ser aritmética: tiene que ser que el extractor devuelva "no está" en vez de
+un número, y eso se mide, no se supone. Es el caso 3 de `CRITERIOS.md` §7 y va a `LIMITES.md`.
+
+---
+
+## 8. Cómo actualizar esto
 
 Una sección nueva por sesión de trabajo, numerada correlativa, con fecha en el título y su
 estado. La más nueva abajo. Las viejas no se tocan.
