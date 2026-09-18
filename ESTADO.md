@@ -41,8 +41,9 @@ de cronometrar. `docker compose run --rm tests` corre las 258 pruebas adentro de
 | Conjunto de datos etiquetado | bloqueado | Falta fotografiar. Es el activo del proyecto |
 | Demo por terminal (`cli.py`) | **cerrado** | Corre sin red ni API keys. Verificado por Python |
 | `docker compose` | **cerrado, corrido** | 73 s en máquina limpia. Dos servicios: `remito demo` y `tests` |
-| `README.md` | **cerrado** | Cada afirmación verificada con grep, una por una |
-| `docs/adr/0001` | **cerrado** | Postgres, revertido el mismo día, con el costo admitido |
+| `README.md` | **reescrito** | Prometía leer fotos y decía "no hay base de datos" con SQLite andando. 13 tests lo vigilan |
+| `docs/adr/` | **2 documentos** | 0001 Postgres revertido; 0002 el extractor opcional y el costo de que los evals no corran en cada PR |
+| CI | **verde** | `docker compose run --rm tests` + la demo + el sha256, por el mismo camino que corre un evaluador |
 | Módulo de plata (`src/remito/plata.py`) | **cerrado** | Centavos enteros |
 | Generador de comprobantes sintéticos | **cerrado** | 4 casos de certificación, imágenes degradadas |
 | Base de datos (`base.py`) | **cerrado** | SQLite. Idempotencia por clave primaria, test de 12 hilos |
@@ -50,7 +51,7 @@ de cronometrar. `docker compose run --rm tests` corre las 258 pruebas adentro de
 | Validación determinista (`validacion.py`) | **cerrado** | Los dos vetos y las mañas, con la factura real de fixture |
 | `LIMITES.md` | **cerrado** | 13 entradas, separando decisión / medido / sin medir |
 | Los 12 documentos rotos a propósito | **cerrado** | 6 las agarra la aritmética, 5 dependen del extractor, 1 no tiene defensa |
-| Tests | — | 258, en verde fuera y adentro del contenedor |
+| Tests | — | 271, en verde fuera, adentro del contenedor y en CI |
 | Esquema de etiquetado | bloqueado | Sale del bloque de exploración, después de las fotos |
 | Baseline T0 (OCR+regex, sin modelo) | vía abierta | No se toca hasta tener datos |
 | Lectura de la foto con modelo | vía abierta | Se certifica el instrumento primero (`CRITERIOS.md` §7) |
@@ -117,6 +118,26 @@ sino no aprobar. Confundir los dos hace que la certificación no certifique nada
 lectura que esa entrada produciría, y la entrada.** Con la verdad y la entrada sola no se puede
 probar nada, porque el papel casi siempre está bien: lo que está mal es lo que alguien leyó de
 él. Causa: se escribió el catálogo de roturas con dos piezas y los tests lo rechazaron.
+
+**R16 — Las equivocaciones se commitean y después se corrigen, no se arreglan antes de
+commitear.** El 18/09/2026 se revirtieron tres decisiones reales —Postgres, un caso de prueba mal
+diseñado, el catálogo de roturas— y las tres se corrigieron antes de guardarlas, así que el
+historial no las muestra. Siete de los nueve evaluadores nombraron los borrados como la señal
+número uno, y el repo iba 3.990 líneas agregadas contra 71 borradas. No se fabrica un borrado
+para que la estadística quede linda; se deja de esconderlos.
+
+**R15 — Verificar por el camino que el README promete, no por el que a uno le queda cómodo.**
+Los tests pasaban con `python -m pytest` en la máquina y fallaban con
+`docker compose run --rm tests`, que es el comando que dice el README. Se empujó igual. Lo
+encontró el CI. Por eso el CI corre por docker y no sobre un Python instalado a mano: un tilde
+verde sobre un camino que nadie más usa no significa nada.
+
+**R14 — Un README que afirma algo falso en un renglón no se cree en ninguno.** Los nueve lo
+nombraron con esas palabras: verifican una afirmación con grep, y si falla una, descartan las
+demás. El 18/09/2026 este repo se publicó diciendo "no hay base de datos" con `base.py` ya
+andando, y prometiendo en la primera línea que entra una foto y sale el stock cuando no hay
+extractor. Ahora `tests/test_readme.py` verifica cada número y cada nombre propio del README
+contra el código, y corrido contra el README viejo falla en cinco puntos.
 
 **R13 — Lo que se va a publicar se audita antes del primer `push`, no después.** Un dato que
 entra en un commit y se empuja queda público para siempre, aunque se borre en el commit
@@ -447,7 +468,51 @@ sección 11 y no antes.
 
 ---
 
-## 13. Cómo actualizar esto
+## 13. Sesión 18/09/2026 — el README mentía, y lo encontró el otro chat — CERRADA
+
+El chat general revisó el estado y puso arriba de todo algo que acá se había pasado por alto: el
+repositorio ya era público y **el README prometía lo que no existe**. Tenía razón, y al
+verificarlo apareció algo peor: además de abrir con "entra la foto, sale la mercadería cargada"
+sin que haya extractor, decía **"no hay base de datos"** con `base.py` funcionando desde hacía
+horas, y la tabla de módulos no listaba `base.py`, `comprobante.py` ni `roturas.py`.
+
+Es exactamente el error que los nueve nombraron primero, cometido en este repositorio, publicado.
+→ R14.
+
+**Reescrito para decir lo que es:** un validador determinista que puede vetar a un modelo,
+escrito antes que el modelo a propósito. Eso no es un hueco, es una decisión: el que juzga se
+escribe antes que el que propone, porque escribirlo después es escribirlo para que apruebe lo que
+el modelo ya devolvió. Y el reparto 6/5/1 de las roturas —lo que contradice la tesis— pasó a
+estar arriba de todo, por consejo del otro chat: "el no escrito" es de las señales que buscan, y
+estaba enterrado.
+
+**`tests/test_readme.py`**, 13 pruebas: que cada módulo esté en la tabla, que los archivos que
+nombra existan, que el reparto de las roturas sea el que publica, que los servicios de docker que
+manda correr existan, que el hash congelado dé, y que no prometa leer fotos mientras no las lea.
+Corrido contra el README viejo, falla en los cinco puntos.
+
+**CI en verde**, corriendo por `docker compose` y no sobre un Python instalado en el runner. Si
+el CI instalara las dependencias por su cuenta, probaría algo que ningún lector hace.
+
+**La primera corrida del CI falló, y tenía razón.** Dos tests del README leen
+`docker-compose.yml` y `docs/`, que no estaban adentro de la imagen: pasaban en la máquina y
+fallaban por el camino que el README promete. Se había empujado sin volver a correr los tests
+dentro de Docker. → R15.
+
+**Cambio de práctica, por consejo del otro chat.** Las equivocaciones se commitean y después se
+corrigen. Hoy se revirtieron tres decisiones reales y las tres se arreglaron antes de guardar, o
+sea que el historial no las muestra: 3.990 agregadas contra 71 borradas. → R16. Los dos commits
+`fix:` de esta sesión son los primeros que sí lo muestran.
+
+**`docs/adr/0002`**: el extractor opcional, con dos costos admitidos. Quien corra sólo la demo
+nunca lo ve funcionar. Y los evals no pueden correr en cada pull request porque los secretos no
+están disponibles para PRs de un fork, así que el requisito "CI que falla si baja la exactitud"
+se cumple sólo en `main`, con tope de gasto, y el resultado de cada corrida se commitea con su
+costo en dólares.
+
+---
+
+## 14. Cómo actualizar esto
 
 Una sección nueva por sesión de trabajo, numerada correlativa, con fecha en el título y su
 estado. La más nueva abajo. Las viejas no se tocan.

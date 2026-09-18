@@ -1,5 +1,7 @@
 # remito
 
+[![tests](https://github.com/nfgalindez-aiko/remito/actions/workflows/tests.yml/badge.svg)](https://github.com/nfgalindez-aiko/remito/actions/workflows/tests.yml)
+
 **Un validador determinista que puede vetar a un modelo. Escrito antes que el modelo, a
 propósito.**
 
