@@ -95,7 +95,20 @@ No hay número todavía. Lo que se va a medir, en este orden:
 
 Hasta que existan esos números, esta sección dice "sin medir". No dice "escala bien".
 
-## 11. La degradación sintética no es una foto de un teléfono barato — **limitación del método**
+## 11. La alerta de aumento no tiene umbral mínimo — **decisión pendiente, a propósito**
+
+`aumento_de` informa cualquier suba, por chica que sea. Hoy eso incluye subas de una
+diezmilésima, que en pantalla se leen "0,00%" y son ruido.
+
+Falta elegir a partir de qué porcentaje vale la pena avisar. **No está elegido todavía, y no se
+va a inventar**: ese número sale de mirar el historial de precios real del kiosco y ver cuánto
+se mueven los precios entre entregas normales. Hoy no hay historial, así que cualquier umbral
+sería uno de los que eligen los modelos —5, 10, 30— sin nada detrás.
+
+Mientras tanto la función informa todo y el que llama decide. Cuando exista el historial, el
+umbral se elige con él y se escribe con su medición al lado.
+
+## 12. La degradación sintética no es una foto de un teléfono barato — **limitación del método**
 
 El generador ensucia imágenes limpias con rotación, sombra y desenfoque. Eso sirve para ordenar
 casos de más fácil a más difícil, pero **no** modela el sensor de un teléfono barato: el ruido, la
@@ -104,7 +117,7 @@ compresión y el color son distintos.
 Cualquier número que salga de imágenes degradadas por código es un orden de magnitud, no una
 medición de la vida real. Lo que se mide de verdad se mide sobre fotos de verdad.
 
-## 12. El conjunto de datos es de un solo kiosco, de un solo partido — **limitación del método**
+## 13. El conjunto de datos es de un solo kiosco, de un solo partido — **limitación del método**
 
 Entre 40 y 100 comprobantes, de los proveedores que le venden a un kiosco de San Clemente del
 Tuyú. Distribuidoras de golosinas, mayormente. No hay farmacia, no hay corralón, no hay
@@ -114,7 +127,7 @@ Un resultado bueno acá no dice nada sobre un remito de repuestos de auto. El bl
 reserva al menos dos proveedores enteros justamente para tener alguna evidencia de generalización,
 pero dos proveedores nuevos son dos, no una muestra.
 
-## 13. El bloque virgen alcanza para distinguir "anda" de "está roto", nada más — **límite calculado**
+## 14. El bloque virgen alcanza para distinguir "anda" de "está roto", nada más — **límite calculado**
 
 Con doce a veinte documentos en el bloque virgen, el intervalo de confianza al 95% sobre la
 proporción de documentos correctos mide entre 30 y 40 puntos de ancho. Aun con un 100% de

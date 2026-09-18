@@ -16,7 +16,7 @@ from pathlib import Path
 
 import pytest
 
-CAMINO_DE_LA_PLATA = ["plata.py", "validacion.py", "comprobante.py"]
+CAMINO_DE_LA_PLATA = ["plata.py", "validacion.py", "comprobante.py", "base.py"]
 SRC = Path(__file__).resolve().parents[1] / "src" / "remito"
 
 

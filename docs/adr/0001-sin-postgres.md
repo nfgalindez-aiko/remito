@@ -54,3 +54,15 @@ real. Eso también se dice cuando exista.
   ser un `if existe`, que es exactamente lo que el requisito prohíbe.
 - **Nada, ni siquiera SQLite.** Tentador, porque la demo de hoy no persiste nada. Descartado:
   la alerta de aumento necesita el historial de precios, y ése es la mitad del producto.
+
+## Nota del 18/09/2026, más tarde el mismo día
+
+La deuda que este documento declaró quedó saldada: `src/remito/base.py` existe, con la clave
+primaria haciendo cumplir la unicidad y un test de doce hilos cargando la misma factura a la
+vez. Gana uno, los otros once reciben `ya_estaba`, y en la base quedan seis líneas, no setenta
+y dos.
+
+Lo que este documento decía sobre la fuerza de esa prueba sigue en pie y no se tacha: SQLite
+serializa a los escritores, así que el test demuestra que la restricción se cumple, no que el
+sistema aguante contención real. La espera máxima medida con doce hilos fue de 99 ms contra
+30 s configurados, o sea que nunca se rozó el límite.

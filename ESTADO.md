@@ -44,14 +44,15 @@ hay Docker en la máquina. Por Python corre y está verificado.
 | `docs/adr/0001` | **cerrado** | Postgres, revertido el mismo día, con el costo admitido |
 | Módulo de plata (`src/remito/plata.py`) | **cerrado** | Centavos enteros |
 | Generador de comprobantes sintéticos | **cerrado** | 4 casos de certificación, imágenes degradadas |
-| Base de datos + idempotencia con UNIQUE | **pendiente, y es requisito de 7 de 9** | SQLite. Hoy no existe. ADR 0001 |
+| Base de datos (`base.py`) | **cerrado** | SQLite. Idempotencia por clave primaria, test de 12 hilos |
+| Alerta de aumento | **cerrado el motor** | Comparación cruzada sin dividir. Falta elegir el umbral, y por qué: `LIMITES.md` §11 |
 | Validación determinista (`validacion.py`) | **cerrado** | Los dos vetos y las mañas, con la factura real de fixture |
 | `LIMITES.md` | **cerrado** | 13 entradas, separando decisión / medido / sin medir |
-| Tests | — | 177, todos en verde |
+| Tests | — | 198, todos en verde |
 | Esquema de etiquetado | bloqueado | Sale del bloque de exploración, después de las fotos |
 | Baseline T0 (OCR+regex, sin modelo) | vía abierta | No se toca hasta tener datos |
 | Lectura de la foto con modelo | vía abierta | Se certifica el instrumento primero (`CRITERIOS.md` §7) |
-| Repo público | no | 8 commits locales, sin remoto |
+| Repo público | no | 9 commits locales, sin remoto |
 
 **Quién es quién.** Nicolás decide y aporta el oficio (21 años de kiosco) y los papeles. El
 asistente hace el trabajo técnico. Los agentes, cuando se usen, sirven para **revisar y
@@ -131,9 +132,9 @@ afirmación. `CRITERIOS.md` se salvó porque ahí sólo está la tabla, sin resu
 | Juntar y fotografiar los 40-100 comprobantes | Nicolás | Es el activo del proyecto; sin esto no hay nada |
 | Tapar CUIT, razón social y domicilio del destinatario antes de que una foto entre al repo | Nicolás / asistente | `CRITERIOS.md` §11 |
 | **Instalar Docker Desktop** | Nicolás | Ahora es lo más urgente: hay un `docker-compose.yml` escrito que nadie corrió nunca. No se publica sin haberlo visto arrancar |
-| SQLite con `UNIQUE` y test de doble carga | asistente | Requisito de 7 de 9 evaluadores y hoy no está. ADR 0001 lo dice con todas las letras |
 | Esquema de etiquetado | asistente | Sale del bloque de exploración, después de las fotos |
 | Los 12 documentos rotos a propósito | asistente | El generador ya da 4; faltan 8 roturas más |
+| Elegir el umbral mínimo de la alerta de aumento | asistente | Sale del historial real. Hoy sería inventar un número: `LIMITES.md` §11 |
 | Publicar el repo en GitHub | Nicolás | Cuando haya algo que valga la pena mostrar |
 
 ---
@@ -301,7 +302,49 @@ salen del dato (`len(Chequeo)`, contar los casos rechazados) y hay un test que l
 
 ---
 
-## 9. Cómo actualizar esto
+## 9. Sesión 18/09/2026 — la base — CERRADA
+
+`src/remito/base.py`: SQLite, un archivo, sin servidor. Salda la deuda que el ADR 0001 había
+declarado.
+
+**Idempotencia por la clave primaria, no por un `if ya existe`.** Preguntar y después insertar
+deja una ventana entre las dos cosas por la que entra la mercadería duplicada. El test dispara
+12 hilos cargando la misma factura a la vez: gana uno, los otros once reciben `ya_estaba`, y en
+la base quedan 6 líneas, no 72. Dicho con honestidad en el propio test: SQLite serializa a los
+escritores, así que eso prueba que la restricción se cumple, no que aguante contención real.
+
+**Tres cosas de SQLite que si no se hacen fallan en silencio**, y las tres están con su
+comentario:
+- Las claves foráneas vienen **apagadas**, por conexión. Sin el PRAGMA, `REFERENCES` es
+  decorativo. Hay un test que mete una línea huérfana y espera que la base la rechace.
+- Una transacción diferida toma el candado tarde y revienta con `SQLITE_BUSY` a mitad de camino.
+  Va `BEGIN IMMEDIATE`.
+- SQLite tiene **afinidad** de tipos, no tipos: un 1.5 entra en una columna INTEGER sin chistar.
+  Las columnas de plata llevan `CHECK (typeof(x) = 'integer')`. Es lo único que hace que "nunca
+  float" también valga adentro del archivo, y hay un test que lo intenta.
+
+**Espera del candado: 30 segundos, medidos.** Con 12 hilos la espera peor fue 99 ms y la mediana
+19 ms. 30 s son 300 veces el peor caso medido; el margen está para un lote real, no ajustado a
+la prueba. El número y su fecha están en el comentario de la constante.
+
+**El estado del comprobante decide si entra al historial de precios.** Lo que está en la cola de
+revisión humana no es un hecho: si sus números alimentaran el historial, un precio mal leído se
+volvería una alerta de aumento que nunca pasó, y lo único que este sistema tiene para ofrecer es
+que sus avisos sean ciertos.
+
+**El guardián de "nunca float" funcionó solo.** Al nacer `base.py` el test falló pidiendo que se
+lo agregara a la lista, y después agarró un `timeout=30.0` que no es plata sino un tiempo de
+espera. No se le agregó una excepción: pasó a ser `30`. "Este float está bien, no es plata" es
+exactamente el razonamiento que deja pasar al que sí importa.
+
+**Error propio, encontrado al releer:** había escrito un `assert ... or True` en un test, que lo
+convierte en un test que no prueba nada y que pasa siempre. Corregido, y el test ahora comprueba
+lo que decía comprobar: que las dos compras imprimen el mismo precio unitario y aun así el costo
+real subió.
+
+---
+
+## 10. Cómo actualizar esto
 
 Una sección nueva por sesión de trabajo, numerada correlativa, con fecha en el título y su
 estado. La más nueva abajo. Las viejas no se tocan.

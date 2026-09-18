@@ -14,6 +14,7 @@ import sys
 from datetime import date
 from pathlib import Path
 
+from .base import Carga, cargar, conectar
 from .comprobante import Comprobante, Linea, PieDeComprobante
 from .plata import Centavos, formatear
 from .validacion import Chequeo, DesvioConocido, Gravedad, Veredicto, revisar
@@ -168,6 +169,29 @@ def demo() -> int:
     )
     for i, (titulo, c, v, explicacion) in enumerate(casos, 1):
         imprimir(f"{i}. {titulo}", c, v, explicacion)
+
+    print("\n\n" + _color("Y la misma factura cargada dos veces, que pasa seguido:", GRIS))
+    conn = conectar()
+    p01, veredicto = casos[0][1], casos[0][2]
+    for intento in (1, 2):
+        resultado = cargar(conn, p01, veredicto)
+        que_paso = (
+            "entró al stock" if resultado is Carga.NUEVO
+            else "ya estaba, no se duplicó la mercadería"
+        )
+        color = VERDE if resultado is Carga.NUEVO else AMARILLO
+        print(f"  foto {intento}   " + _color(f"{resultado.value:<11}", color) + que_paso)
+    filas = conn.execute("SELECT count(*) FROM linea").fetchone()[0]
+    conn.close()
+    print(
+        _color(
+            f"  en la base quedaron {filas} líneas, no {filas * 2}. Lo garantiza la clave\n"
+            "  primaria de la tabla, no un `if ya existe`: preguntar y después insertar deja\n"
+            "  una ventana entre las dos cosas por la que entra la mercadería duplicada.\n"
+            "  Hay un test con 12 hilos que va a buscar esa ventana.",
+            GRIS,
+        )
+    )
 
     print(
         "\n"
