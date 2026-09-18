@@ -1,6 +1,4 @@
 .git
 .venv
 __pycache__
-tests
-docs
-*.md
+.pytest_cache

@@ -1,5 +1,11 @@
-# Un solo servicio. No hay base de datos que levantar ni servidor que esperar: el
-# ADR 0001 explica por que, y que se resigno al decidirlo.
+# Dos servicios sobre la misma imagen. No hay base de datos que levantar ni servidor que
+# esperar: el ADR 0001 explica por que, y que se resigno al decidirlo.
 services:
+  # docker compose run --rm remito demo
   remito:
     build: .
+
+  # docker compose run --rm tests
+  tests:
+    build: .
+    entrypoint: ["python", "-m", "pytest", "-q"]

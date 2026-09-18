@@ -16,15 +16,19 @@ Sin API keys, sin red, sin configurar nada. Toma una factura real de un kiosco d
 del Tuyú, la rompe de tres maneras distintas, y muestra cuál entra y cuál va a revisión humana
 con el motivo.
 
-Sin Docker, con Python 3.12 o más nuevo:
+**73 segundos** desde ese comando hasta la salida. Medido el 18/09/2026 en una máquina que no
+tenía ni la imagen base ni caché de build: se borró todo antes de cronometrar.
+
+Los tests, adentro de la misma imagen:
+
+```
+docker compose run --rm tests
+```
+
+Sin Docker, con Python 3.12 o más nuevo y `pip install pillow pytest`:
 
 ```
 PYTHONPATH=src python -m remito demo
-```
-
-Los tests:
-
-```
 python -m pytest
 ```
 
