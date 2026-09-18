@@ -16,7 +16,18 @@ from pathlib import Path
 
 import pytest
 
+from conftest import necesita_ocr
+
+# Modulos que CALCULAN plata: suman, multiplican, redondean, comparan. Guardia completa.
 CAMINO_DE_LA_PLATA = ["plata.py", "validacion.py", "comprobante.py", "base.py", "roturas.py"]
+
+# Modulos que LEEN plata sin calcularla. `baseline.py` hace geometria de verdad -angulos de
+# rotacion, alturas de letra en pixeles- y esos si son numeros reales: obligarlos a ser
+# enteros seria deformar el codigo para cumplir una regla que no le aplica.
+#
+# La garantia que si corresponde exigirle es otra, y esta abajo: que toda la plata que
+# devuelve haya salido de parse_importe, o sea entera, sin haber pasado por una cuenta.
+SOLO_LEEN_PLATA = ["baseline.py"]
 SRC = Path(__file__).resolve().parents[1] / "src" / "remito"
 
 
@@ -69,6 +80,38 @@ def test_no_se_importa_decimal_ni_fractions(modulo: str) -> None:
     assert not importados & {"decimal", "fractions", "numpy"}
 
 
+@pytest.mark.parametrize("modulo", SOLO_LEEN_PLATA)
+def test_los_que_solo_leen_tampoco_importan_decimal(modulo: str) -> None:
+    importados = {
+        alias.name.split(".")[0]
+        for n in ast.walk(arbol(modulo))
+        if isinstance(n, (ast.Import, ast.ImportFrom))
+        for alias in n.names
+    }
+    assert not importados & {"decimal", "fractions", "numpy"}
+
+
+@necesita_ocr
+def test_lo_que_lee_el_baseline_es_entero_y_no_paso_por_ninguna_cuenta() -> None:
+    """La garantia de `baseline.py`, que no se puede pedir mirando el arbol sintactico.
+
+    Cada importe que devuelve tiene que venir tal cual de `parse_importe`, que devuelve int.
+    Si alguna vez alguien promedia dos precios o divide un subtotal para "arreglarlo", esto
+    lo agarra.
+    """
+    from remito.baseline import leer
+    from remito.sintetico import dibujar, generar
+
+    c = generar(2, cantidad_lineas=4)
+    leido = leer(dibujar(c))
+    assert leido is not None
+    for l in leido.lineas:
+        assert type(l.precio_unitario) is int
+        assert type(l.subtotal) is int
+    for campo in ("subtotal", "total", "iva", "percepcion_iibb"):
+        assert type(getattr(leido.pie, campo)) is int, campo
+
+
 def test_la_lista_cubre_todo_lo_que_toca_plata() -> None:
     """Si alguien agrega un módulo nuevo que importa Centavos, tiene que entrar a la lista.
 
@@ -80,7 +123,9 @@ def test_la_lista_cubre_todo_lo_que_toca_plata() -> None:
         for archivo in SRC.glob("*.py")
         if "Centavos" in archivo.read_text(encoding="utf-8")
     }
-    sin_cubrir = tocan_plata - set(CAMINO_DE_LA_PLATA) - {"sintetico.py", "cli.py"}
+    sin_cubrir = (
+        tocan_plata - set(CAMINO_DE_LA_PLATA) - set(SOLO_LEEN_PLATA) - {"sintetico.py", "cli.py"}
+    )
     assert not sin_cubrir, (
         f"estos módulos manejan Centavos y no están en la lista: {sorted(sin_cubrir)}"
     )

@@ -42,8 +42,9 @@ del Tuyú, la rompe de tres maneras, y muestra cuál entra al stock sola y cuál
 humana con el motivo. Después la carga dos veces para mostrar que la segunda no duplica la
 mercadería.
 
-**73 segundos** desde ese comando hasta la salida. Medido el 18/09/2026 en una máquina a la que
-se le borró la imagen base y la caché de build antes de cronometrar.
+**79 segundos** desde ese comando hasta la salida. Medido el 18/09/2026 en una máquina a la que
+se le borró la imagen base y la caché de build antes de cronometrar. Eran 73 antes de que la
+imagen incluyera Tesseract, que es el baseline sin modelo.
 
 Los tests, adentro de la misma imagen:
 
@@ -51,7 +52,9 @@ Los tests, adentro de la misma imagen:
 docker compose run --rm tests
 ```
 
-Sin Docker, con Python 3.12 o más nuevo y `pip install pillow pytest`:
+Sin Docker, con Python 3.12 o más nuevo, `pip install pillow pytesseract pytest` y el binario
+de Tesseract (`apt-get install tesseract-ocr tesseract-ocr-spa`). Sin Tesseract corre todo menos
+los tests del baseline, que se saltean diciendo qué falta:
 
 ```
 PYTHONPATH=src python -m remito demo
@@ -107,6 +110,7 @@ Todo medido en `CRITERIOS.md` §3, con la tabla línea por línea.
 | `src/remito/comprobante.py` | El comprobante tal como está impreso, no como debería estar |
 | `src/remito/validacion.py` | Los cuatro chequeos, con tolerancias distintas y su medición al lado |
 | `src/remito/base.py` | SQLite. Idempotencia por la clave primaria, no por un `if ya existe`, con un test de doce hilos |
+| `src/remito/baseline.py` | T0: leer el comprobante sin modelo, con OCR y reglas. Es el baseline que decide si el modelo se gana el lugar |
 | `src/remito/sintetico.py` | Comprobantes inventados con la respuesta conocida, degradados como una foto de celular |
 | `src/remito/roturas.py` | Las doce roturas, cada una con quién la agarra |
 | `src/remito/cli.py` | La demo |

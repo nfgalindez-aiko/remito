@@ -125,7 +125,31 @@ alguien haga bien una cosa que el sistema no puede verificar.
 Está en el catálogo como `dos_papeles_en_la_misma_foto` (`src/remito/roturas.py`), clasificada
 `NINGUNA`, y hay un test que falla si esta sección desaparece.
 
-## 13. La degradación sintética no es una foto de un teléfono barato — **limitación del método**
+## 13. T0 no lee fotos reales todavía, y eso invalida la comparación con el modelo — **medido**
+
+T0 —OCR más reglas, sin modelo— lee bien los comprobantes que genera este mismo repositorio:
+98,8% de los campos, 11 de 12 documentos perfectos. **Ese número es un espejismo** y está dicho
+en el propio módulo: el parser se escribió mirando esas imágenes.
+
+Sobre la única foto real que existe hoy (P01, 2576x1932, bloque de exploración), medido el
+18/09/2026:
+
+- El OCR lee bien: 235 palabras, confianza mediana 91.
+- El pie sale **exacto**: `SUB-TOTAL 38.068,23` y `Unidades: 26`.
+- Las filas se agrupan bien: código y descripción correctos en cuatro de seis renglones.
+- **Las columnas de plata no se leen.** Donde va el precio, el OCR devuelve `A ; a a a]`.
+- Por lo tanto T0 devuelve `None`: se niega en vez de inventar, que es lo correcto.
+
+**Consecuencia que importa más que el número:** `CRITERIOS.md` §2 dice que el modelo tiene que
+ganarle a T0 por más de 25 puntos para justificarse. Con T0 a medio hacer, el modelo le gana por
+noventa puntos sin esfuerzo y la comparación no significa nada. Un baseline abandonado es un
+espantapájaros, y un espantapájaros hace que cualquier cosa parezca buena.
+
+Así que **hasta que T0 tenga un intento honesto sobre fotos reales, la comparación T0 contra
+modelo no se reporta**. Terminarlo necesita más de una foto: ajustar los parámetros del OCR
+contra un solo documento es sobreajustar, no arreglar.
+
+## 14. La degradación sintética no es una foto de un teléfono barato — **limitación del método**
 
 El generador ensucia imágenes limpias con rotación, sombra y desenfoque. Eso sirve para ordenar
 casos de más fácil a más difícil, pero **no** modela el sensor de un teléfono barato: el ruido, la
@@ -134,7 +158,7 @@ compresión y el color son distintos.
 Cualquier número que salga de imágenes degradadas por código es un orden de magnitud, no una
 medición de la vida real. Lo que se mide de verdad se mide sobre fotos de verdad.
 
-## 14. El conjunto de datos es de un solo kiosco, de un solo partido — **limitación del método**
+## 15. El conjunto de datos es de un solo kiosco, de un solo partido — **limitación del método**
 
 Entre 40 y 100 comprobantes, de los proveedores que le venden a un kiosco de San Clemente del
 Tuyú. Distribuidoras de golosinas, mayormente. No hay farmacia, no hay corralón, no hay
@@ -144,7 +168,7 @@ Un resultado bueno acá no dice nada sobre un remito de repuestos de auto. El bl
 reserva al menos dos proveedores enteros justamente para tener alguna evidencia de generalización,
 pero dos proveedores nuevos son dos, no una muestra.
 
-## 15. El bloque virgen alcanza para distinguir "anda" de "está roto", nada más — **límite calculado**
+## 16. El bloque virgen alcanza para distinguir "anda" de "está roto", nada más — **límite calculado**
 
 Con doce a veinte documentos en el bloque virgen, el intervalo de confianza al 95% sobre la
 proporción de documentos correctos mide entre 30 y 40 puntos de ancho. Aun con un 100% de

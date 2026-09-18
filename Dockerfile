@@ -11,7 +11,12 @@ FROM python:3.12-slim
 # Pillow es la unica dependencia del programa, y solo para GENERAR comprobantes de prueba.
 # El nucleo -las cuentas que vetan- no depende de nada fuera de la biblioteca estandar.
 # pytest esta para que quien lea el repo pueda comprobar los tests, no para el programa.
-RUN pip install --no-cache-dir "pillow>=11" "pytest>=8"
+# Tesseract es el baseline T0: leer el comprobante sin modelo, para saber si el modelo se
+# gana el lugar. Es una dependencia grande y esta justificada por eso, no por comodidad:
+# sin un baseline trivial, "el modelo anda" no se puede distinguir de "el modelo aporta".
+RUN apt-get update -qq  && apt-get install -y -qq --no-install-recommends tesseract-ocr tesseract-ocr-spa  && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir "pillow>=11" "pytesseract>=0.3" "pytest>=8"
 
 WORKDIR /app
 # Entra el repositorio entero, menos lo que saca .dockerignore. Se probo enumerando las

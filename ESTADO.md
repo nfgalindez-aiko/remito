@@ -30,7 +30,7 @@ publica con un `LIMITES.md` honesto que diga hasta dónde llegó. Un repo chico 
 más que uno grande a medias; publicarlo a medias vuelve a los evaluadores activamente negativos.
 
 **Qué se puede mostrar hoy:** `docker compose run --rm remito demo` — la factura real del kiosco y
-tres formas de romperla, sin red y sin API keys. **Verificado el 18/09/2026: 73 segundos** desde
+tres formas de romperla, sin red y sin API keys. **Verificado el 18/09/2026: 79 segundos** desde
 el comando hasta la salida, en una máquina con la imagen base y la caché de build borradas antes
 de cronometrar. `docker compose run --rm tests` corre las 258 pruebas adentro de la imagen.
 
@@ -51,9 +51,9 @@ de cronometrar. `docker compose run --rm tests` corre las 258 pruebas adentro de
 | Validación determinista (`validacion.py`) | **cerrado** | Los dos vetos y las mañas, con la factura real de fixture |
 | `LIMITES.md` | **cerrado** | 13 entradas, separando decisión / medido / sin medir |
 | Los 12 documentos rotos a propósito | **cerrado** | 6 las agarra la aritmética, 5 dependen del extractor, 1 no tiene defensa |
-| Tests | — | 271, en verde fuera, adentro del contenedor y en CI |
+| Tests | — | 285 en el contenedor (273 + 12 de OCR), 1 falla esperada documentada |
 | Esquema de etiquetado | bloqueado | Sale del bloque de exploración, después de las fotos |
-| Baseline T0 (OCR+regex, sin modelo) | vía abierta | No se toca hasta tener datos |
+| Baseline T0 (`baseline.py`) | **a medio hacer, y escrito** | Lee los sintéticos (98,8%, espejismo) y NO lee la foto real. `LIMITES.md` §13 |
 | Lectura de la foto con modelo | vía abierta | Se certifica el instrumento primero (`CRITERIOS.md` §7) |
 | Repo público | **sí** | github.com/nfgalindez-aiko/remito |
 
@@ -512,7 +512,63 @@ costo en dólares.
 
 ---
 
-## 14. Cómo actualizar esto
+## 14. Sesión 18/09/2026 — T0, y por qué no se puede comparar todavía — CERRADA
+
+Sin crédito de API y sin fotos, lo único que valía la pena era el baseline T0: leer el
+comprobante **sin modelo**, con OCR y reglas. `CRITERIOS.md` §2 ya se había comprometido a
+construirlo. Efecto lateral que no se había visto: el repositorio pasa a leer imágenes de
+verdad, sin una sola API key.
+
+**Sobre comprobantes sintéticos:** 98,8% de los campos y 11 de 12 documentos perfectos en las
+limpias; 55% y 4 de 12 en las degradadas, donde además se niega a leer 5 de 12 en vez de
+inventar. **Ese número es un espejismo y está dicho en el propio módulo:** el parser se escribió
+mirando esas imágenes. Es entrenar y evaluar con los mismos datos, con otro disfraz.
+
+**Primera evidencia de punta a punta de la tesis**, sobre 24 sintéticos degradados: T0 se negó a
+leer 12, leyó bien 5, y de las 7 que leyó mal **la aritmética frenó las 7**. Cero mercadería
+falsa aprobada. Con 7 casos el intervalo al 95% no descarta hasta un 35%, así que es una señal,
+no una prueba, y se reporta así.
+
+**Y el resultado que más vale: T0 devuelve `None` con la foto real de Nicolás.** El espejismo
+quedó confirmado empíricamente en vez de sólo advertido. Medido, paso por paso:
+
+- El OCR lee bien: 235 palabras, confianza mediana 91.
+- El pie sale exacto: `SUB-TOTAL 38.068,23` y `Unidades: 26`.
+- Las filas se agrupan bien: código y descripción correctos.
+- **Las columnas de plata no se leen.** Donde va el precio devuelve `A ; a a a]`.
+- Entonces T0 se niega, que es lo correcto.
+
+**Dos bugs propios, encontrados midiendo y no leyendo:**
+
+- `"TOTAL"` es subcadena de `"SUB-TOTAL"`, así que el total del comprobante leía el subtotal, en
+  los doce documentos. Un subtotal es un importe creíble: mirando la salida no se notaba. Lo
+  encontró contar campos contra la verdad. Y `"IVA"` aparece arriba de todo en "IVA: Responsable
+  Inscripto", así que el IVA quedaba siempre en cero.
+- La tolerancia para agrupar filas era de 14 píxeles fijos, sacados de que el generador dibuja
+  filas de 34 px. Sobre una foto de 2576x1932 parte cada renglón. Ahora sale de la altura de
+  letra medida en cada imagen. Hay un test con el nombre del bug.
+
+**Se paró de ajustar a propósito.** Seguir tocando parámetros de OCR contra una sola foto es
+sobreajustar, no arreglar. Queda un `xfail(strict=True)` que describe lo que tiene que pasar y
+avisa el día que alguien lo arregle.
+
+**Consecuencia que va a `LIMITES.md` §13 y es la más importante:** con T0 a medio hacer, el
+modelo le va a ganar por noventa puntos sin esfuerzo y la comparación de `CRITERIOS.md` §2 no
+significa nada. Un baseline abandonado es un espantapájaros. **Hasta que T0 tenga un intento
+honesto sobre fotos reales, esa comparación no se reporta.** Escrito antes de que exista el
+modelo, que es cuando escribirlo cuesta algo.
+
+**El guardián de floats se dividió en dos.** `baseline.py` no calcula plata: la lee, y hace
+geometría de verdad —ángulos, alturas en píxeles— donde los reales son reales. Forzarlos a
+enteros sería deformar el código para cumplir una regla que no le aplica. En su lugar se le
+exige lo que sí corresponde: que todo importe que devuelve haya salido de `parse_importe` sin
+pasar por ninguna cuenta, verificado en ejecución.
+
+Arranque en frío: **79 segundos**, contra 73 antes de meter Tesseract.
+
+---
+
+## 15. Cómo actualizar esto
 
 Una sección nueva por sesión de trabajo, numerada correlativa, con fecha en el título y su
 estado. La más nueva abajo. Las viejas no se tocan.

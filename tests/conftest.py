@@ -56,3 +56,28 @@ def datos_p01() -> dict:
 def p01(datos_p01: dict) -> Comprobante:
     """La factura A 0026-00183517 de P01, 17/09/2026. El primer papel del proyecto."""
     return armar(datos_p01)
+
+
+def _hay_ocr() -> bool:
+    """Hacen falta las dos cosas: el paquete de Python y el binario del sistema.
+
+    Son independientes: `pip install pytesseract` no instala Tesseract, sólo lo llama.
+    """
+    import importlib.util
+    import shutil
+
+    return (
+        importlib.util.find_spec("pytesseract") is not None
+        and shutil.which("tesseract") is not None
+    )
+
+
+# T0 necesita el binario de Tesseract, que no viene con pip. Adentro de la imagen siempre
+# está, así que `docker compose run --rm tests` -que es el comando del README y el que corre
+# el CI- ejecuta todo. En una máquina sin Tesseract estos tests se saltean diciendo qué falta,
+# en vez de reventar con un error que no explica nada.
+necesita_ocr = pytest.mark.skipif(
+    not _hay_ocr(),
+    reason="falta pytesseract o el binario de tesseract; en Docker están los dos. "
+    "En Debian/Ubuntu: pip install pytesseract && apt-get install tesseract-ocr tesseract-ocr-spa",
+)
