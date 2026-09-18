@@ -1,0 +1,29 @@
+# Corre lo mismo que corre un evaluador en su maquina, y por el mismo camino.
+#
+# Se usa docker compose y no una instalacion de Python en el runner a proposito: si el CI
+# instalara las dependencias por su cuenta y los tests pasaran, no probaria lo que el README
+# promete, que es que el repositorio arranca con un comando y sin configurar nada. Un CI verde
+# sobre un camino que nadie mas usa es un tilde que no significa nada.
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  docker:
+    name: docker compose run --rm tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: las pruebas, adentro de la imagen
+        run: docker compose run --rm tests
+
+      - name: la demo termina con salida cero
+        run: docker compose run --rm remito demo
+
+      - name: el congelado de CRITERIOS.md sigue verificando
+        run: sha256sum -c CRITERIOS.sha256
