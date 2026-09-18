@@ -2,14 +2,12 @@ from __future__ import annotations
 
 import json
 from datetime import date
-from pathlib import Path
-
 import pytest
 
 from remito.comprobante import Comprobante, Linea, PieDeComprobante
 from remito.plata import Centavos
 
-FIXTURES = Path(__file__).parent / "fixtures"
+from remito.cli import DATOS as FIXTURES  # noqa: E402
 
 
 def cargar(nombre: str) -> dict:

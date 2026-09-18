@@ -19,6 +19,16 @@ from .comprobante import Comprobante, Linea
 from .plata import formatear
 
 
+def diferencia(centavos: int) -> str:
+    """Un centavo se dice en centavos; seis mil pesos se dicen en pesos.
+
+    Escribir "-611524 centavos" obliga al que lee a dividir por cien mentalmente para
+    entender si lo que falta es una moneda o media caja de galletitas."""
+    if abs(centavos) < 100:
+        return f"{centavos:+d} centavos"
+    return ("faltan " if centavos < 0 else "sobran ") + formatear(abs(centavos))
+
+
 class Chequeo(str, Enum):
     SUBTOTAL = "subtotal"
     UNIDADES = "unidades"
@@ -111,7 +121,7 @@ def revisar_linea(linea: Linea) -> Descuadre | None:
         detalle=(
             f"{formatear(linea.precio_unitario)} × {linea.cantidad} = "
             f"{formatear(esperado)}, pero el papel dice {formatear(linea.subtotal)} "
-            f"(difiere {dif:+d} centavos, se toleran {tolerancia_linea(linea.cantidad)})"
+            f"({diferencia(dif)}, se toleran {tolerancia_linea(linea.cantidad)} centavos)"
         ),
     )
 
@@ -163,7 +173,7 @@ def revisar(
             Gravedad.VETO,
             dif,
             f"las líneas suman {formatear(suma)} y el SUB-TOTAL impreso dice "
-            f"{formatear(comprobante.pie.subtotal)} ({dif:+d} centavos)",
+            f"{formatear(comprobante.pie.subtotal)} ({diferencia(dif)})",
         )
 
     # Veto duro 2, independiente del anterior. Si una línea tapada tuviera subtotal cero,
@@ -198,7 +208,7 @@ def revisar(
             Gravedad.AVISO,
             dif,
             f"los componentes suman {formatear(componentes)} y el TOTAL impreso dice "
-            f"{formatear(pie.total)} ({dif:+d} centavos)",
+            f"{formatear(pie.total)} ({diferencia(dif)})",
         )
 
     return Veredicto(

@@ -1,0 +1,5 @@
+# Un solo servicio. No hay base de datos que levantar ni servidor que esperar: el
+# ADR 0001 explica por que, y que se resigno al decidirlo.
+services:
+  remito:
+    build: .

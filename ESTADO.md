@@ -19,24 +19,39 @@ minutos donde un evaluador abre un archivo al azar y pregunta por qué esa líne
 una extracción poco confiable en un sistema utilizable, y el conocimiento del oficio es lo que
 define bien las validaciones.
 
-**Qué se puede mostrar hoy a un cliente:** todavía nada público. Hay criterios congelados, un
-hallazgo técnico real (sección 5) y el módulo de plata andando con 57 tests (sección 6).
+**Para quién es** (definido por el chat general el 18/09/2026): para **un** lector, un evaluador
+técnico que abre un archivo al azar y pregunta por qué esa línea. No para un kiosquero, no para
+los clientes de Workana —ésos no abren repositorios—. Defendible, no usable: sin interfaz, sin
+usuarios, sin la parte aburrida de todo producto. Pero **tiene que correr**: arrancar en una
+máquina limpia sin una sola API key es el requisito nº1 de los nueve.
+
+**Fecha de corte: 9 de octubre de 2026**, tres semanas desde el arranque. Lo que haya ese día se
+publica con un `LIMITES.md` honesto que diga hasta dónde llegó. Un repo chico y terminado vale
+más que uno grande a medias; publicarlo a medias vuelve a los evaluadores activamente negativos.
+
+**Qué se puede mostrar hoy:** `docker compose run --rm remito demo` — la factura real del kiosco y
+tres formas de romperla, sin red y sin API keys. **La ruta por Docker está SIN VERIFICAR**: no
+hay Docker en la máquina. Por Python corre y está verificado.
 
 | Frente | Estado | Nota |
 |---|---|---|
 | `PLAN.md` — qué construir y por qué | cerrado | Escrito 18/09/2026 |
 | `CRITERIOS.md` — criterios congelados | **cerrado** | sha256 `7c99f2d8…7259`, 18/09/2026 |
 | Conjunto de datos etiquetado | bloqueado | Falta fotografiar. Es el activo del proyecto |
+| Demo por terminal (`cli.py`) | **cerrado** | Corre sin red ni API keys. Verificado por Python |
+| `docker compose up` | **sin verificar** | Escrito, nunca corrido: falta Docker en la máquina |
+| `README.md` | **cerrado** | Cada afirmación verificada con grep, una por una |
+| `docs/adr/0001` | **cerrado** | Postgres, revertido el mismo día, con el costo admitido |
 | Módulo de plata (`src/remito/plata.py`) | **cerrado** | Centavos enteros |
 | Generador de comprobantes sintéticos | **cerrado** | 4 casos de certificación, imágenes degradadas |
+| Base de datos + idempotencia con UNIQUE | **pendiente, y es requisito de 7 de 9** | SQLite. Hoy no existe. ADR 0001 |
 | Validación determinista (`validacion.py`) | **cerrado** | Los dos vetos y las mañas, con la factura real de fixture |
 | `LIMITES.md` | **cerrado** | 13 entradas, separando decisión / medido / sin medir |
-| Tests | — | 159, todos en verde |
+| Tests | — | 177, todos en verde |
 | Esquema de etiquetado | bloqueado | Sale del bloque de exploración, después de las fotos |
 | Baseline T0 (OCR+regex, sin modelo) | vía abierta | No se toca hasta tener datos |
 | Lectura de la foto con modelo | vía abierta | Se certifica el instrumento primero (`CRITERIOS.md` §7) |
-| `docker compose up` | bloqueado | **Docker no está instalado en la máquina** |
-| Repo público | no | 4 commits locales, sin remoto |
+| Repo público | no | 8 commits locales, sin remoto |
 
 **Quién es quién.** Nicolás decide y aporta el oficio (21 años de kiosco) y los papeles. El
 asistente hace el trabajo técnico. Los agentes, cuando se usen, sirven para **revisar y
@@ -115,10 +130,10 @@ afirmación. `CRITERIOS.md` se salvó porque ahí sólo está la tabla, sin resu
 |---|---|---|
 | Juntar y fotografiar los 40-100 comprobantes | Nicolás | Es el activo del proyecto; sin esto no hay nada |
 | Tapar CUIT, razón social y domicilio del destinatario antes de que una foto entre al repo | Nicolás / asistente | `CRITERIOS.md` §11 |
-| Instalar Docker Desktop | Nicolás | Requisito nº1 de los evaluadores; hoy no está en la máquina |
+| **Instalar Docker Desktop** | Nicolás | Ahora es lo más urgente: hay un `docker-compose.yml` escrito que nadie corrió nunca. No se publica sin haberlo visto arrancar |
+| SQLite con `UNIQUE` y test de doble carga | asistente | Requisito de 7 de 9 evaluadores y hoy no está. ADR 0001 lo dice con todas las letras |
 | Esquema de etiquetado | asistente | Sale del bloque de exploración, después de las fotos |
 | Los 12 documentos rotos a propósito | asistente | El generador ya da 4; faltan 8 roturas más |
-| Definir si el repo tiene que ser usable o sólo defendible | chat general | Preguntas en `preguntas-chat-general.txt`, escritorio. Cambia la mitad del alcance |
 | Publicar el repo en GitHub | Nicolás | Cuando haya algo que valga la pena mostrar |
 
 ---
@@ -246,7 +261,47 @@ un número, y eso se mide, no se supone. Es el caso 3 de `CRITERIOS.md` §7 y va
 
 ---
 
-## 8. Cómo actualizar esto
+## 8. Sesión 18/09/2026 — la demo que se puede correr — CERRADA
+
+El chat general definió tres cosas que cambiaron la prioridad: defendible y no usable, un solo
+lector (evaluador técnico), y fecha de corte el 9 de octubre de 2026. Prioridad declarada, en
+orden: que arranque limpio, que el veto funcione y esté testeado, que `LIMITES.md` sea honesto.
+
+Con eso se dejaron de lado las 8 roturas que faltaban y se hizo la demo.
+
+**`remito demo`** toma la factura de P01 y la rompe de tres maneras: la hoja que tapa una
+línea, la hoja que tapa mercadería sin cargo (que no mueve un peso, y por eso hace falta el
+segundo veto), y la coma que se come el OCR. Muestra cuál entra y cuál no, con el motivo. Sin
+red, sin API keys, sin modelo, sin fotos.
+
+**Decisión revertida el mismo día: Postgres.** A la mañana la decisión era Postgres adentro del
+compose; a la tarde, con el lector definido, no había respuesta buena a "¿por qué Postgres en un
+CLI de un usuario?". Va SQLite cuando haya algo que persistir. `docs/adr/0001-sin-postgres.md`
+lo escribe con el costo admitido: hoy **no existe** la idempotencia con `UNIQUE` que pidieron
+siete de los nueve evaluadores, y eso no se arregla escribiendo el ADR.
+
+**El fixture se movió de `tests/` al paquete.** Estaba mal: la demo dependía de la carpeta de
+tests para arrancar, así que la imagen de Docker habría tenido que copiar los tests para que el
+programa funcione.
+
+**Cada afirmación del README se verificó una por una**, como lo haría un evaluador con grep: el
+hash, la demo, los tests, "sin red", los cuatro chequeos, los archivos nombrados, las
+dependencias. La única que no se pudo verificar es `docker compose`, y está marcada como sin
+verificar en la tabla de arriba en vez de darse por buena.
+
+**"Nunca float" ahora es un test, no una frase.** Grep encuentra la palabra en los comentarios
+que explican por qué no se usa y no distingue prosa de código. `test_nada_de_float.py` lee el
+árbol sintáctico de los tres módulos donde vive la plata y busca literales decimales,
+divisiones verdaderas e importaciones de `decimal`. Incluye un test que falla si nace un módulo
+nuevo que maneje `Centavos` y nadie lo agrega a la lista.
+
+**Cuarto error de conteo en prosa**, el mismo de R10: la demo decía "cuatro formas de romperla"
+y "los cinco chequeos" cuando eran tres y cuatro. Esta vez no se corrigió el texto: los números
+salen del dato (`len(Chequeo)`, contar los casos rechazados) y hay un test que lo comprueba.
+
+---
+
+## 9. Cómo actualizar esto
 
 Una sección nueva por sesión de trabajo, numerada correlativa, con fecha en el título y su
 estado. La más nueva abajo. Las viejas no se tocan.
