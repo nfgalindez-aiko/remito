@@ -19,19 +19,21 @@ minutos donde un evaluador abre un archivo al azar y pregunta por qué esa líne
 una extracción poco confiable en un sistema utilizable, y el conocimiento del oficio es lo que
 define bien las validaciones.
 
-**Qué se puede mostrar hoy a un cliente:** nada todavía. No hay repo público, no hay URL, no hay
-código. Hay criterios congelados y un hallazgo técnico real (sección 5).
+**Qué se puede mostrar hoy a un cliente:** todavía nada público. Hay criterios congelados, un
+hallazgo técnico real (sección 5) y el módulo de plata andando con 57 tests (sección 6).
 
 | Frente | Estado | Nota |
 |---|---|---|
 | `PLAN.md` — qué construir y por qué | cerrado | Escrito 18/09/2026 |
 | `CRITERIOS.md` — criterios congelados | **cerrado** | sha256 `7c99f2d8…7259`, 18/09/2026 |
 | Conjunto de datos etiquetado | bloqueado | Falta fotografiar. Es el activo del proyecto |
-| Esquema de etiquetado | en curso | Próximo paso. Sale de exploración |
+| Módulo de plata (`src/remito/plata.py`) | **cerrado** | Centavos enteros, 57 tests en verde |
+| Validación determinista (`validacion.py`) | **cerrado** | Los dos vetos y las mañas, con la factura real de fixture |
+| Esquema de etiquetado | bloqueado | Sale del bloque de exploración, después de las fotos |
 | Baseline T0 (OCR+regex, sin modelo) | vía abierta | No se toca hasta tener datos |
-| Validación determinista | vía abierta | Reglas ya especificadas en `CRITERIOS.md` §3 |
+| Lectura de la foto con modelo | vía abierta | Se certifica el instrumento primero (`CRITERIOS.md` §7) |
 | `docker compose up` | bloqueado | **Docker no está instalado en la máquina** |
-| Repo público | no | Sin commits todavía |
+| Repo público | no | 4 commits locales, sin remoto |
 
 **Quién es quién.** Nicolás decide y aporta el oficio (21 años de kiosco) y los papeles. El
 asistente hace el trabajo técnico. Los agentes, cuando se usen, sirven para **revisar y
@@ -45,7 +47,7 @@ es exactamente lo que los evaluadores dijeron que delata que nadie decidió.
 Corpus numerado. Se citan por número.
 
 **R1 — El precio unitario impreso es un redondeo de presentación, no el precio.** El costo
-unitario autoritativo es `subtotal_línea ÷ cantidad`. Medido: en 3 de 6 líneas del primer
+unitario autoritativo es `subtotal_línea ÷ cantidad`. Medido: en 4 de 6 líneas del primer
 documento, `precio × cantidad ≠ subtotal` por 1 a 2 centavos. Usar el precio impreso para la
 alerta de aumento produce aumentos de un centavo que no existen.
 
@@ -85,6 +87,13 @@ deja pasar errores reales en los otros ocho.
 La lista de mañas se ajusta con datos, así que sólo puede crecer con documentos de exploración y
 entrenamiento. Una maña aprendida mirando el bloque virgen es fuga (R6).
 
+**R10 — Todo número que va a la prosa se recalcula desde el dato, con un test.** Causa: el
+18/09/2026 el asistente escribió "en 3 de 6 líneas" en dos lugares del ESTADO y en el fixture,
+cuando eran 4 de 6. La tabla de mediciones, generada por código, siempre estuvo bien; el error
+apareció al resumirla a mano, colapsando dos líneas idénticas (las dos de Kokis, que fallan las
+dos por el mismo centavo). Lo encontró el test que recontaba el dato en vez de repetir la
+afirmación. `CRITERIOS.md` se salvó porque ahí sólo está la tabla, sin resumen en prosa.
+
 ---
 
 ## 3. Pendientes
@@ -94,9 +103,10 @@ entrenamiento. Una maña aprendida mirando el bloque virgen es fuga (R6).
 | Juntar y fotografiar los 40-100 comprobantes | Nicolás | Es el activo del proyecto; sin esto no hay nada |
 | Tapar CUIT, razón social y domicilio del destinatario antes de que una foto entre al repo | Nicolás / asistente | `CRITERIOS.md` §11 |
 | Instalar Docker Desktop | Nicolás | Requisito nº1 de los evaluadores; hoy no está en la máquina |
-| Primer commit del repo | Nicolás | Comando dado; el commit es lo que le da fecha al congelado |
 | Esquema de etiquetado | asistente | Sale del bloque de exploración, después de las fotos |
-| Decidir si el proyecto se llama "remito" cuando el documento real es una factura | Nicolás | Afecta el vocabulario de todo el repo |
+| Generador de comprobantes sintéticos para certificar el instrumento | asistente | `CRITERIOS.md` §7. No depende de las fotos: se puede hacer ya |
+| `LIMITES.md` | asistente | Varias entradas ya decididas y sin escribir (R3, R4, QR de AFIP, dos hojas) |
+| Publicar el repo en GitHub | Nicolás | Cuando haya algo que valga la pena mostrar |
 
 ---
 
@@ -141,7 +151,7 @@ TOTAL impreso                                                    = 46.671,64
 
 La regla literal de `PLAN.md` rechaza esta factura legítima. → R2.
 
-**Tercer hallazgo: el precio unitario impreso está redondeado para mostrar.** En 3 de 6 líneas,
+**Tercer hallazgo: el precio unitario impreso está redondeado para mostrar.** En 4 de 6 líneas,
 `precio × cantidad ≠ subtotal`, por 1 a 2 centavos. El subtotal de la línea 15004 dividido 3 da
 1981,7367, no los 1981,74 que imprime el papel. → R1.
 
@@ -162,7 +172,41 @@ totales gratis pero que se decidió no leer porque cortocircuita lo que el proye
 
 ---
 
-## 6. Cómo actualizar esto
+## 6. Sesión 18/09/2026 — el módulo de plata — CERRADA
+
+Se escribió el núcleo: `plata.py`, `comprobante.py`, `validacion.py`, con la factura de P01 como
+fixture etiquetado a mano. 57 tests, todos en verde. No hay modelo todavía, ni base de datos, ni
+lectura de fotos: primero las cuentas que van a poder vetarlo.
+
+**Se midió dónde se rompe el float, en vez de suponerlo.** La suma de las seis líneas de P01 da
+exacta también en float: el float NO falla al sumar importes de kiosco. Falla al redondear.
+Medido sobre los 19.999.900 netos posibles de $1 a $200.000, calcular el IVA del 21% en float da
+un centavo distinto que en enteros en 147.239 casos, el 0,736%. El primero es $3,50: en enteros
+0,74, en float 0,73. Con una factura por día, un error cada cuatro meses y medio. Ese número y su
+fecha están comentados en `plata.py`, y el caso de $3,50 es un test.
+
+**Decisión: no se divide nunca para comparar costos.** El costo unitario real de una línea casi
+nunca cae en centavos redondos (5.945,21 / 3 = 1.981,7367). En vez de dividir y redondear, se
+comparan los subtotales cruzados: `sub_a × cant_b` contra `sub_b × cant_a`, enteros, exacto. Hay
+un test con dos líneas que imprimirían el mismo precio unitario y sin embargo cuestan distinto.
+
+**Decisión: el parser no adivina nunca.** Si un importe puede leerse de dos formas, levanta
+excepción en vez de elegir. Un número plausible e inventado pasa la validación y entra a la base
+siendo falso, que es el peor error que puede cometer este sistema porque no deja rastro. El caso
+que sí es indistinguible —el OCR se come la coma y "737,61" llega como "73761"— no se resuelve en
+el parser sino en el veto del subtotal, y hay un test que lo demuestra.
+
+**Se descubrió que el congelado no sobrevivía a un `git clone`.** `core.autocrlf=true`, que es lo
+que instala Git for Windows por defecto, reescribe los finales de línea al clonar: cambian los
+bytes y el sha256 de `CRITERIOS.md` deja de verificar, justo cuando alguien lo quiere comprobar.
+Arreglado con `.gitattributes`, y verificado clonando el repo en otra carpeta con esa opción
+forzada.
+
+**Error del asistente, con su causa:** ver R10. Se dijo "3 de 6 líneas" cuando eran 4 de 6.
+
+---
+
+## 7. Cómo actualizar esto
 
 Una sección nueva por sesión de trabajo, numerada correlativa, con fecha en el título y su
 estado. La más nueva abajo. Las viejas no se tocan.

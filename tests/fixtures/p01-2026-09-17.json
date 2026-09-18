@@ -1,0 +1,67 @@
+{
+  "id": "p01-2026-09-17-A-0026-00183517",
+  "bloque": "exploracion",
+  "nota": "Primer documento del proyecto. Foto de celular sobre una mesa, torcida, con la segunda hoja superpuesta tapando parte de la primera. Transcripto a mano por Nicolas el 18/09/2026 y verificado con codigo. Queda quemado en el bloque de exploracion por CRITERIOS.md seccion 0: se lo miro antes de congelar los criterios.",
+  "por_que_esta_aca": "Es la prueba de que el TOTAL impreso de una factura A legitima puede no cerrar con sus propios componentes. Si alguien alguna vez cambia el veto del subtotal por un veto del total, este fixture se lo tiene que hacer notar.",
+
+  "proveedor": "P01",
+  "tipo": "A",
+  "punto_venta": "0026",
+  "numero": "00183517",
+  "fecha": "2026-09-17",
+  "remito_numero": "114727",
+  "hoja": "1/1",
+
+  "lineas": [
+    {"codigo": "1825",  "descripcion": "JORGITO BIZCOCHO X 200 GS", "cantidad": 5,
+     "precio_unitario_impreso": "$ 737,61",   "precio_unitario": 73761,
+     "subtotal_impreso": "$ 3.688,05",        "subtotal": 368805},
+
+    {"codigo": "15004", "descripcion": "KOKIS MEMBRILLITO 500 G",   "cantidad": 3,
+     "precio_unitario_impreso": "$ 1.981,74", "precio_unitario": 198174,
+     "subtotal_impreso": "$ 5.945,21",        "subtotal": 594521},
+
+    {"codigo": "15001", "descripcion": "KOKIS CANONCITO 500 G",     "cantidad": 3,
+     "precio_unitario_impreso": "$ 1.981,74", "precio_unitario": 198174,
+     "subtotal_impreso": "$ 5.945,21",        "subtotal": 594521},
+
+    {"codigo": "3398",  "descripcion": "MINI RHODESIA 60 GS",       "cantidad": 5,
+     "precio_unitario_impreso": "$ 1.870,63", "precio_unitario": 187063,
+     "subtotal_impreso": "$ 9.353,15",        "subtotal": 935315},
+
+    {"codigo": "2920",  "descripcion": "PEPITOS 119 G",             "cantidad": 5,
+     "precio_unitario_impreso": "$ 1.404,27", "precio_unitario": 140427,
+     "subtotal_impreso": "$ 7.021,37",        "subtotal": 702137},
+
+    {"codigo": "1661",  "descripcion": "CEREALITAS 212 G",          "cantidad": 5,
+     "precio_unitario_impreso": "$ 1.223,05", "precio_unitario": 122305,
+     "subtotal_impreso": "$ 6.115,24",        "subtotal": 611524}
+  ],
+
+  "pie": {
+    "subtotal_impreso": "$ 38.068,23", "subtotal": 3806823,
+    "otros_descuentos_impreso": "$ 0,00", "otros_descuentos": 0,
+    "percepcion_iva_impreso": "$ 0,00", "percepcion_iva": 0,
+    "percepcion_iibb_impreso": "$ 609,09", "percepcion_iibb": 60909,
+    "impuestos_internos_impreso": "$ 0,00", "impuestos_internos": 0,
+    "iva_impreso": "7994.33", "iva": 799433,
+    "total_impreso": "$ 46.671,64", "total": 4667164,
+    "unidades": 26,
+    "nota_iva_impreso": "El IVA es el unico importe del papel escrito con punto decimal y sin separador de miles. Todos los demas usan punto de miles y coma decimal. Dos formatos en la misma hoja."
+  },
+
+  "hechos_verificados_con_codigo": {
+    "suma_lineas_vs_subtotal": "38.068,23 contra 38.068,23, diferencia 0 centavos",
+    "suma_unidades_vs_pie": "26 contra 26",
+    "iva_21_sobre_neto": "38.068,23 x 0,21 = 7.994,3283, redondeado 7.994,33, igual al impreso",
+    "percepcion_iibb_sobre_neto": "609,09 / 38.068,23 = 1,6000 % exacto",
+    "componentes_vs_total": "38.068,23 + 609,09 + 7.994,33 = 46.671,65 contra 46.671,64 impreso, diferencia 1 centavo",
+    "precio_x_cantidad_vs_subtotal": "coinciden exacto 2 de 6 lineas (1825 y 3398); las otras 4 difieren -1, -1, +2 y -1 centavos"
+  },
+
+  "fuera_de_alcance": [
+    "El QR de AFIP, que daria los totales gratis. Decision consciente, CRITERIOS.md seccion 10.",
+    "Los numeros manuscritos sobre el papel (un 6 arriba a la izquierda y un 2 en el medio).",
+    "CUIT, razon social, domicilio y codigo de cliente del destinatario: tapados antes de que la foto entre al repo."
+  ]
+}
