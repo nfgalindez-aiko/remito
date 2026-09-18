@@ -30,6 +30,7 @@ hallazgo técnico real (sección 5) y el módulo de plata andando con 57 tests (
 | Módulo de plata (`src/remito/plata.py`) | **cerrado** | Centavos enteros |
 | Generador de comprobantes sintéticos | **cerrado** | 4 casos de certificación, imágenes degradadas |
 | Validación determinista (`validacion.py`) | **cerrado** | Los dos vetos y las mañas, con la factura real de fixture |
+| `LIMITES.md` | **cerrado** | 13 entradas, separando decisión / medido / sin medir |
 | Tests | — | 159, todos en verde |
 | Esquema de etiquetado | bloqueado | Sale del bloque de exploración, después de las fotos |
 | Baseline T0 (OCR+regex, sin modelo) | vía abierta | No se toca hasta tener datos |
@@ -116,8 +117,8 @@ afirmación. `CRITERIOS.md` se salvó porque ahí sólo está la tabla, sin resu
 | Tapar CUIT, razón social y domicilio del destinatario antes de que una foto entre al repo | Nicolás / asistente | `CRITERIOS.md` §11 |
 | Instalar Docker Desktop | Nicolás | Requisito nº1 de los evaluadores; hoy no está en la máquina |
 | Esquema de etiquetado | asistente | Sale del bloque de exploración, después de las fotos |
-| `LIMITES.md` | asistente | Seis entradas ya decididas y sin escribir (R3, R4, R11, QR de AFIP, dos hojas, cantidades fraccionarias) |
 | Los 12 documentos rotos a propósito | asistente | El generador ya da 4; faltan 8 roturas más |
+| Definir si el repo tiene que ser usable o sólo defendible | chat general | Preguntas en `preguntas-chat-general.txt`, escritorio. Cambia la mitad del alcance |
 | Publicar el repo en GitHub | Nicolás | Cuando haya algo que valga la pena mostrar |
 
 ---
