@@ -30,8 +30,9 @@ publica con un `LIMITES.md` honesto que diga hasta dónde llegó. Un repo chico 
 más que uno grande a medias; publicarlo a medias vuelve a los evaluadores activamente negativos.
 
 **Qué se puede mostrar hoy:** `docker compose run --rm remito demo` — la factura real del kiosco y
-tres formas de romperla, sin red y sin API keys. **La ruta por Docker está SIN VERIFICAR**: no
-hay Docker en la máquina. Por Python corre y está verificado.
+tres formas de romperla, sin red y sin API keys. **Verificado el 18/09/2026: 73 segundos** desde
+el comando hasta la salida, en una máquina con la imagen base y la caché de build borradas antes
+de cronometrar. `docker compose run --rm tests` corre las 258 pruebas adentro de la imagen.
 
 | Frente | Estado | Nota |
 |---|---|---|
@@ -39,7 +40,7 @@ hay Docker en la máquina. Por Python corre y está verificado.
 | `CRITERIOS.md` — criterios congelados | **cerrado** | sha256 `7c99f2d8…7259`, 18/09/2026 |
 | Conjunto de datos etiquetado | bloqueado | Falta fotografiar. Es el activo del proyecto |
 | Demo por terminal (`cli.py`) | **cerrado** | Corre sin red ni API keys. Verificado por Python |
-| `docker compose up` | **sin verificar** | Escrito, nunca corrido: falta Docker en la máquina |
+| `docker compose` | **cerrado, corrido** | 73 s en máquina limpia. Dos servicios: `remito demo` y `tests` |
 | `README.md` | **cerrado** | Cada afirmación verificada con grep, una por una |
 | `docs/adr/0001` | **cerrado** | Postgres, revertido el mismo día, con el costo admitido |
 | Módulo de plata (`src/remito/plata.py`) | **cerrado** | Centavos enteros |
@@ -49,11 +50,11 @@ hay Docker en la máquina. Por Python corre y está verificado.
 | Validación determinista (`validacion.py`) | **cerrado** | Los dos vetos y las mañas, con la factura real de fixture |
 | `LIMITES.md` | **cerrado** | 13 entradas, separando decisión / medido / sin medir |
 | Los 12 documentos rotos a propósito | **cerrado** | 6 las agarra la aritmética, 5 dependen del extractor, 1 no tiene defensa |
-| Tests | — | 258, todos en verde |
+| Tests | — | 258, en verde fuera y adentro del contenedor |
 | Esquema de etiquetado | bloqueado | Sale del bloque de exploración, después de las fotos |
 | Baseline T0 (OCR+regex, sin modelo) | vía abierta | No se toca hasta tener datos |
 | Lectura de la foto con modelo | vía abierta | Se certifica el instrumento primero (`CRITERIOS.md` §7) |
-| Repo público | **remoto conectado, sin empujar** | `github.com/nfgalindez-aiko/remito`. No se empuja hasta verificar Docker: el README afirma que `docker compose` anda |
+| Repo público | **sí** | github.com/nfgalindez-aiko/remito |
 
 **Quién es quién.** Nicolás decide y aporta el oficio (21 años de kiosco) y los papeles. El
 asistente hace el trabajo técnico. Los agentes, cuando se usen, sirven para **revisar y
@@ -416,7 +417,37 @@ Queda como R13. El remoto está conectado y **no se empujó**: el README afirma 
 
 ---
 
-## 12. Cómo actualizar esto
+## 12. Sesión 18/09/2026 — Docker corrido y repo publicado — CERRADA
+
+`docker compose run --rm remito demo`: **73 segundos** desde el comando hasta la salida, con la
+imagen base y la caché de build borradas antes de cronometrar. El umbral que nombraron los nueve
+evaluadores eran dos minutos. Antes de esto el número no existía y estaba marcado "sin verificar"
+en esta misma tabla durante todo el día.
+
+**Se agregó `docker compose run --rm tests`**, que corre las 258 pruebas adentro de la misma
+imagen. Sin eso, "258 tests" es un número que el lector tendría que creer: para comprobarlo habría
+que instalar Python y pytest a mano, que es justo la fricción que el requisito nº1 quiere evitar.
+
+**Dos cosas que sólo aparecieron al correrlo, no al escribirlo:**
+
+- La imagen excluía los `.md`, así que el test que exige que una rotura sin defensa esté escrita
+  en `LIMITES.md` no encontraba el archivo y fallaba adentro del contenedor. Se metieron los
+  documentos en la imagen. La alternativa —que el test se saltee cuando no encuentra el archivo—
+  se descartó: un guardián que se desactiva solo no es un guardián.
+- `docker compose run` reutiliza la imagen ya construida y no la reconstruye sola. El primer
+  arreglo pareció no funcionar hasta correr `docker compose build`.
+
+**Se midió tres veces y sólo la tercera sirve.** 38 s la primera corrida (con una imagen más
+liviana, sin pytest), 58 s reconstruyendo sin caché pero con la imagen base ya bajada, y 73 s en
+el caso que de verdad importa: una máquina que no tiene nada. Los dos primeros números habrían
+quedado bien en el README y habrían sido falsos.
+
+**El repositorio se publicó** en github.com/nfgalindez-aiko/remito, después de la auditoría de la
+sección 11 y no antes.
+
+---
+
+## 13. Cómo actualizar esto
 
 Una sección nueva por sesión de trabajo, numerada correlativa, con fecha en el título y su
 estado. La más nueva abajo. Las viejas no se tocan.
