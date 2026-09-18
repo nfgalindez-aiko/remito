@@ -14,7 +14,8 @@ import sys
 from datetime import date
 from pathlib import Path
 
-from .base import Carga, cargar, conectar
+from .base import Carga, cargar, conectar, desvios_de
+from .bitacora import Bitacora
 from .comprobante import Comprobante, Linea, PieDeComprobante
 from .plata import Centavos, formatear
 from .validacion import Chequeo, DesvioConocido, Gravedad, Veredicto, revisar
@@ -206,6 +207,61 @@ def demo() -> int:
     return 0
 
 
+def procesar_foto(ruta: Path, base: Path | None = None) -> int:
+    """El camino completo: foto -> lectura -> cuentas -> base. Deja rastro de cada paso.
+
+    Devuelve 0 si la mercadería entró, 1 si va a revisión humana, 2 si no se pudo leer.
+    Tres códigos distintos porque son tres situaciones distintas para quien lo llame desde
+    un script: entró, hay que mirarlo, o sacá otra foto.
+    """
+    # La lectura se importa acá adentro y no arriba: `baseline` trae pytesseract, que la
+    # demo no necesita. Quien sólo corre `remito demo` no debería tropezar con una
+    # dependencia que no usa.
+    from PIL import Image
+
+    from .baseline import leer as leer_foto
+
+    bitacora = Bitacora()
+    with bitacora.comprobante() as seguimiento:
+        print(f"seguimiento {_color(seguimiento.id, AMARILLO)}  ({bitacora.ruta})")
+        seguimiento.anotar("foto", archivo=ruta.name)
+
+        with Image.open(ruta) as img:
+            seguimiento.anotar("abierta", ancho=img.width, alto=img.height)
+            comprobante = leer_foto(img)
+
+        if comprobante is None:
+            seguimiento.anotar("ilegible")
+            print("  " + _color("NO SE PUDO LEER", ROJO) + "  sacá otra foto")
+            return 2
+
+        seguimiento.anotar(
+            "leido", lineas=len(comprobante.lineas),
+            subtotal=comprobante.pie.subtotal, unidades=comprobante.pie.unidades,
+        )
+
+        conn = conectar(base) if base else conectar()
+        try:
+            veredicto = revisar(comprobante, desvios_de(conn, comprobante.proveedor))
+            seguimiento.anotar(
+                "revisado", aprobado=veredicto.aprobado,
+                descuadres=[f"{d.gravedad.value}:{d.chequeo.value}" for d in veredicto.descuadres],
+            )
+            imprimir(ruta.name, comprobante, veredicto)
+
+            if not veredicto.aprobado:
+                seguimiento.anotar("a_revision", motivos=[d.detalle for d in veredicto.vetos])
+                return 1
+
+            resultado = cargar(conn, comprobante, veredicto)
+            seguimiento.anotar("cargado", resultado=resultado.value)
+            if resultado is Carga.YA_ESTABA:
+                print("  " + _color("ya estaba cargado", AMARILLO))
+            return 0
+        finally:
+            conn.close()
+
+
 def revisar_archivo(ruta: Path) -> int:
     c = cargar_json(ruta)
     v = revisar(c)
@@ -221,10 +277,15 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("demo", help="la factura real del kiosco y unas cuantas formas de romperla")
     rev = sub.add_parser("revisar", help="validar un comprobante en JSON")
     rev.add_argument("archivo", type=Path)
+    foto = sub.add_parser("procesar", help="leer una foto y cargarla si las cuentas cierran")
+    foto.add_argument("imagen", type=Path)
+    foto.add_argument("--base", type=Path, default=None, help="archivo SQLite donde cargar")
 
     args = parser.parse_args(argv)
     if args.comando == "demo":
         return demo()
+    if args.comando == "procesar":
+        return procesar_foto(args.imagen, args.base)
     return revisar_archivo(args.archivo)
 
 

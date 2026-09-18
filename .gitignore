@@ -5,6 +5,12 @@ proveedores.local.*
 # Fotos sin tapar CUIT, razon social y domicilio. Solo entran al repo ya tachadas.
 datos/crudo/
 
+# La bitacora es de cada instalacion, no del repositorio.
+remito.jsonl
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+
 __pycache__/
 *.pyc
 .venv/

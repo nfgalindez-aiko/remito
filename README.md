@@ -113,9 +113,11 @@ Todo medido en `CRITERIOS.md` §3, con la tabla línea por línea.
 | `src/remito/baseline.py` | T0: leer el comprobante sin modelo, con OCR y reglas. Es el baseline que decide si el modelo se gana el lugar |
 | `src/remito/sintetico.py` | Comprobantes inventados con la respuesta conocida, degradados como una foto de celular |
 | `src/remito/roturas.py` | Las doce roturas, cada una con quién la agarra |
-| `src/remito/cli.py` | La demo |
+| `src/remito/bitacora.py` | Qué pasó con cada comprobante. Un identificador que se puede decir por teléfono, y que rechaza un CUIT |
+| `src/remito/cli.py` | La demo y el comando que procesa una foto |
 | `CRITERIOS.md` | Los criterios, congelados con su sha256 **antes** de tener el conjunto de datos |
 | `LIMITES.md` | Lo que no hace, empezando por lo que contradice la tesis |
+| `RUNBOOK.md` | Qué hacer cuando algo sale mal, empezando por el síntoma y no por la causa |
 | `docs/adr/` | Las decisiones, incluida una revertida el mismo día que se tomó |
 
 Hay un test que falla si un módulo nuevo no aparece en esa tabla. Se agregó porque esta tabla ya
