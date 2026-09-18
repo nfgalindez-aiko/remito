@@ -234,3 +234,51 @@ class TestDesviosConocidos:
         veredicto = revisar(p01, desvios_de(conn, "P01"))
         aviso = next(d for d in veredicto.descuadres if d.chequeo is Chequeo.TOTAL)
         assert "maña conocida" in aviso.detalle
+
+
+class TestUnComprobanteSinIdentidadNoEntra:
+    """Bug del 18/09/2026, encontrado probando `remito procesar` de punta a punta.
+
+    T0 no lee el número de factura y deja "?" en los cuatro campos que forman la clave. Dos
+    facturas completamente distintas —una de 5 líneas y $62.259,22, otra de 4 y $53.245,03—
+    entraron las dos como `?|?|?|?`. La primera se cargó, la segunda dijo "ya estaba", y su
+    mercadería no entró nunca. Sin un solo error a la vista, que es lo que lo hace grave.
+
+    Los tests que ya existían no lo agarraron porque todos usan comprobantes con número.
+    """
+
+    def _sin_leer(self, p01: Comprobante) -> Comprobante:
+        return dataclasses.replace(p01, proveedor="?", punto_venta="?", numero="?", tipo="?")
+
+    def test_no_se_carga(self, conn, p01) -> None:
+        from remito.base import ComprobanteSinIdentidad
+
+        with pytest.raises(ComprobanteSinIdentidad):
+            cargar(conn, self._sin_leer(p01), revisar(p01))
+
+    def test_y_la_base_queda_vacia(self, conn, p01) -> None:
+        from remito.base import ComprobanteSinIdentidad
+
+        with pytest.raises(ComprobanteSinIdentidad):
+            cargar(conn, self._sin_leer(p01), revisar(p01))
+        assert conn.execute("SELECT count(*) FROM comprobante").fetchone()[0] == 0
+
+    def test_dos_facturas_distintas_sin_numero_no_se_comen_entre_si(self, conn, p01) -> None:
+        """El caso exacto que se perdía. Antes: la segunda respondía `ya_estaba` y su
+        mercadería desaparecía. Ahora las dos se niegan, que es ruidoso y correcto."""
+        from remito.base import ComprobanteSinIdentidad
+
+        una = self._sin_leer(p01)
+        otra = dataclasses.replace(una, lineas=p01.lineas[:3])
+        for comprobante in (una, otra):
+            with pytest.raises(ComprobanteSinIdentidad):
+                cargar(conn, comprobante, revisar(p01))
+        assert conn.execute("SELECT count(*) FROM comprobante").fetchone()[0] == 0
+
+    def test_con_todos_los_campos_leidos_entra_normal(self, conn, p01) -> None:
+        assert p01.identificable
+        assert cargar(conn, p01, revisar(p01)) is Carga.NUEVO
+
+    def test_alcanza_con_que_falte_uno_solo(self, p01) -> None:
+        for campo in ("proveedor", "tipo", "punto_venta", "numero"):
+            assert not dataclasses.replace(p01, **{campo: "?"}).identificable, campo

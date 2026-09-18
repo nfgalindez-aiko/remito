@@ -149,7 +149,25 @@ Así que **hasta que T0 tenga un intento honesto sobre fotos reales, la comparac
 modelo no se reporta**. Terminarlo necesita más de una foto: ajustar los parámetros del OCR
 contra un solo documento es sobreajustar, no arreglar.
 
-## 14. La degradación sintética no es una foto de un teléfono barato — **limitación del método**
+## 14. T0 lee el contenido pero no la identidad, así que solo no puede cargar nada — **medido**
+
+T0 lee las líneas y los totales, y no intenta leer el proveedor, el tipo, el punto de venta ni el
+número de factura. Esos cuatro campos son la clave con la que la base decide si un comprobante ya
+estaba.
+
+Consecuencia, encontrada probando `remito procesar` de punta a punta el 18/09/2026: dos facturas
+completamente distintas —una de 5 líneas y $62.259,22, otra de 4 y $53.245,03— entraron las dos
+como `?|?|?|?`. La primera se cargó. La segunda dijo "ya estaba" y **su mercadería no entró
+nunca**, sin un solo mensaje de error.
+
+Corregido: un comprobante sin identidad no se carga, se niega. Pero eso deja el límite a la vista
+en vez de taparlo — **hoy T0 no puede cargar nada por sí solo.** Sirve como baseline de lectura,
+que es para lo que se construyó, y no como sistema completo.
+
+Leer la identidad es trabajo del extractor con modelo. Meterle reglas de encabezado a T0 para
+cada proveedor sería inflar el baseline a mano justo antes de compararlo contra el modelo.
+
+## 15. La degradación sintética no es una foto de un teléfono barato — **limitación del método**
 
 El generador ensucia imágenes limpias con rotación, sombra y desenfoque. Eso sirve para ordenar
 casos de más fácil a más difícil, pero **no** modela el sensor de un teléfono barato: el ruido, la
@@ -158,7 +176,7 @@ compresión y el color son distintos.
 Cualquier número que salga de imágenes degradadas por código es un orden de magnitud, no una
 medición de la vida real. Lo que se mide de verdad se mide sobre fotos de verdad.
 
-## 15. El conjunto de datos es de un solo kiosco, de un solo partido — **limitación del método**
+## 16. El conjunto de datos es de un solo kiosco, de un solo partido — **limitación del método**
 
 Entre 40 y 100 comprobantes, de los proveedores que le venden a un kiosco de San Clemente del
 Tuyú. Distribuidoras de golosinas, mayormente. No hay farmacia, no hay corralón, no hay
@@ -168,7 +186,7 @@ Un resultado bueno acá no dice nada sobre un remito de repuestos de auto. El bl
 reserva al menos dos proveedores enteros justamente para tener alguna evidencia de generalización,
 pero dos proveedores nuevos son dos, no una muestra.
 
-## 16. El bloque virgen alcanza para distinguir "anda" de "está roto", nada más — **límite calculado**
+## 17. El bloque virgen alcanza para distinguir "anda" de "está roto", nada más — **límite calculado**
 
 Con doce a veinte documentos en el bloque virgen, el intervalo de confianza al 95% sobre la
 proporción de documentos correctos mide entre 30 y 40 puntos de ancho. Aun con un 100% de

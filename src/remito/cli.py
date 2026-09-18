@@ -14,7 +14,7 @@ import sys
 from datetime import date
 from pathlib import Path
 
-from .base import Carga, cargar, conectar, desvios_de
+from .base import Carga, ComprobanteSinIdentidad, cargar, conectar, desvios_de
 from .bitacora import Bitacora
 from .comprobante import Comprobante, Linea, PieDeComprobante
 from .plata import Centavos, formatear
@@ -70,7 +70,15 @@ def cargar_json(ruta: Path) -> Comprobante:
     )
 
 
-def imprimir(titulo: str, c: Comprobante, v: Veredicto, explicacion: str = "") -> None:
+def imprimir(
+    titulo: str, c: Comprobante, v: Veredicto, explicacion: str = "",
+    *, si_aprueba: str = "entra al stock sin que nadie lo mire",
+) -> None:
+    """`si_aprueba` existe porque `revisar` contesta si las cuentas cierran, que no es lo
+    mismo que si la mercadería entra. Un comprobante puede cerrar perfecto y no poder
+    cargarse igual, por ejemplo si no se leyó de qué comprobante se trata. Decir
+    "APROBADO: entra al stock" y dos renglones después "A REVISIÓN" es mentirle al que lee.
+    """
     print(f"\n{titulo}")
     if explicacion:
         print(_color(f"  {explicacion}", GRIS))
@@ -82,7 +90,7 @@ def imprimir(titulo: str, c: Comprobante, v: Veredicto, explicacion: str = "") -
         )
     )
     if v.aprobado:
-        print("  " + _color("APROBADO", VERDE) + "  entra al stock sin que nadie lo mire")
+        print("  " + _color("APROBADO", VERDE) + f"  {si_aprueba}")
     else:
         print("  " + _color("A REVISIÓN", ROJO) + "  no entra: las cuentas no cierran")
     for d in v.descuadres:
@@ -247,13 +255,23 @@ def procesar_foto(ruta: Path, base: Path | None = None) -> int:
                 "revisado", aprobado=veredicto.aprobado,
                 descuadres=[f"{d.gravedad.value}:{d.chequeo.value}" for d in veredicto.descuadres],
             )
-            imprimir(ruta.name, comprobante, veredicto)
+            imprimir(ruta.name, comprobante, veredicto, si_aprueba="las cuentas cierran")
 
             if not veredicto.aprobado:
                 seguimiento.anotar("a_revision", motivos=[d.detalle for d in veredicto.vetos])
                 return 1
 
-            resultado = cargar(conn, comprobante, veredicto)
+            try:
+                resultado = cargar(conn, comprobante, veredicto)
+            except ComprobanteSinIdentidad as e:
+                seguimiento.anotar("sin_identidad", detalle=str(e))
+                print(
+                    "  " + _color("A REVISIÓN", ROJO)
+                    + "  las cuentas cierran pero no se leyó qué comprobante es"
+                )
+                print(_color("    sin el número no hay forma de saber si ya está cargado", GRIS))
+                return 1
+
             seguimiento.anotar("cargado", resultado=resultado.value)
             if resultado is Carga.YA_ESTABA:
                 print("  " + _color("ya estaba cargado", AMARILLO))

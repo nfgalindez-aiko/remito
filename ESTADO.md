@@ -51,7 +51,9 @@ de cronometrar. `docker compose run --rm tests` corre las 258 pruebas adentro de
 | Validación determinista (`validacion.py`) | **cerrado** | Los dos vetos y las mañas, con la factura real de fixture |
 | `LIMITES.md` | **cerrado** | 13 entradas, separando decisión / medido / sin medir |
 | Los 12 documentos rotos a propósito | **cerrado** | 6 las agarra la aritmética, 5 dependen del extractor, 1 no tiene defensa |
-| Tests | — | 285 en el contenedor (273 + 12 de OCR), 1 falla esperada documentada |
+| Bitácora y `RUNBOOK.md` | **cerrado** | Identificador por comprobante, y el RUNBOOK arranca por el síntoma |
+| `remito procesar <foto>` | **cerrado** | Camino completo: foto, T0, cuentas, base. Tres códigos de salida |
+| Tests | — | 307 en el contenedor, 1 falla esperada documentada |
 | Esquema de etiquetado | bloqueado | Sale del bloque de exploración, después de las fotos |
 | Baseline T0 (`baseline.py`) | **a medio hacer, y escrito** | Lee los sintéticos (98,8%, espejismo) y NO lee la foto real. `LIMITES.md` §13 |
 | Lectura de la foto con modelo | vía abierta | Se certifica el instrumento primero (`CRITERIOS.md` §7) |
@@ -118,6 +120,10 @@ sino no aprobar. Confundir los dos hace que la certificación no certifique nada
 lectura que esa entrada produciría, y la entrada.** Con la verdad y la entrada sola no se puede
 probar nada, porque el papel casi siempre está bien: lo que está mal es lo que alguien leyó de
 él. Causa: se escribió el catálogo de roturas con dos piezas y los tests lo rechazaron.
+
+**R17 — Un identificador que una persona va a copiar a mano no lleva O, 0, I, l ni 1.** Alguien
+lo anota en el margen del papel y después lo tipea, o lo dice por teléfono. Perder un poco de
+espacio de combinaciones sale más barato que un llamado para deletrear un UUID.
 
 **R16 — Las equivocaciones se commitean y después se corrigen, no se arreglan antes de
 commitear.** El 18/09/2026 se revirtieron tres decisiones reales —Postgres, un caso de prueba mal
@@ -568,7 +574,51 @@ Arranque en frío: **79 segundos**, contra 73 antes de meter Tesseract.
 
 ---
 
-## 15. Cómo actualizar esto
+## 15. Sesión 18/09/2026 — la bitácora, el RUNBOOK, y una pérdida silenciosa — CERRADA
+
+**La bitácora no es logging de manual.** Existe para una sola pregunta, que es la que se hace de
+verdad tres semanas después: *"esta factura quedó en revisión, ¿por qué?"*. De ahí sale todo lo
+demás: un identificador que arranca con el día y se puede decir por teléfono (`0918-k3f2`), sin
+las letras y números que se copian mal (→ R17); un archivo y no la salida estándar, que es lo que
+el usuario está leyendo; y un chequeo que **rechaza cualquier valor con forma de CUIT antes de
+escribirlo**, porque un archivo de registro es lo último que alguien mira antes de mandarlo
+adjunto pidiendo ayuda.
+
+**`RUNBOOK.md`** arranca por el síntoma como lo ve una persona, no por el nombre técnico de la
+causa. Incluye qué hacer cuando el sistema aprueba algo mal, que es el único caso sin tolerancia,
+y una sección final de lo que el RUNBOOK **no** cubre: no hay copias de seguridad automáticas, no
+hay guardia y no hay alertas, porque este repositorio es defendible y no operable.
+
+**`remito procesar <foto>`** ata el camino completo por primera vez: foto, T0, cuentas, base. Tres
+códigos de salida porque son tres situaciones distintas para un script: entró, miralo, sacá otra.
+
+**Y probándolo apareció el peor bug de todo el proyecto.** T0 no lee el número de factura, así que
+deja `?` en los cuatro campos que forman la clave de la base. Dos facturas completamente distintas
+entraron las dos como `?|?|?|?`: la primera se cargó, la segunda dijo "ya estaba" y **su
+mercadería no entró nunca, sin un solo mensaje de error**. Silenciosa, que es lo que la hace la
+peor.
+
+Ninguno de los 302 tests lo agarró, porque todos usaban comprobantes con número. Lo encontró
+correr el comando de verdad con dos imágenes distintas. Es el mismo aprendizaje de R15 en otro
+disfraz: probar por el camino real, no por el cómodo.
+
+**Se commiteó el bug y después el arreglo**, que es lo que dice R16. El arreglo no es inventarle
+una clave —un hash del contenido haría que dos fotos del mismo papel con una letra distinta de
+OCR se carguen dos veces, que es peor— sino negarse a cargar lo que no se puede identificar, que
+es lo que hace el resto del proyecto cuando no sabe. El test de regresión, corrido contra el
+commit anterior, falla en los cinco casos.
+
+**Queda un límite nuevo a la vista, en `LIMITES.md` §14: hoy T0 no puede cargar nada por sí
+solo.** Sirve como baseline de lectura, que es para lo que se construyó, y no como sistema
+completo.
+
+**Y un detalle de texto que era una mentira chica:** la salida decía "APROBADO: entra al stock" y
+dos renglones después "A REVISIÓN". `revisar` contesta si las cuentas cierran, que no es lo mismo
+que si la mercadería entra.
+
+---
+
+## 16. Cómo actualizar esto
 
 Una sección nueva por sesión de trabajo, numerada correlativa, con fecha en el título y su
 estado. La más nueva abajo. Las viejas no se tocan.

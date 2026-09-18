@@ -65,6 +65,20 @@ class Comprobante:
     hoja: str | None = None
     """"1/1", "1/2". Si dice 1/2 y sólo hay una foto, falta la mitad del documento."""
 
+    SIN_LEER = "?"
+    """Lo que ponen los lectores en un campo que no intentaron leer. No es lo mismo que
+    vacío: vacío sería una lectura que dio nada, esto es que nadie miró."""
+
+    @property
+    def identificable(self) -> bool:
+        """Si se puede saber QUÉ comprobante es.
+
+        Sin esto no hay idempotencia posible: dos facturas distintas de las que no se leyó
+        el número son indistinguibles entre sí, y la base -que las identifica por el
+        número- va a tomar la segunda por un duplicado de la primera.
+        """
+        return self.SIN_LEER not in (self.proveedor, self.tipo, self.punto_venta, self.numero)
+
     @property
     def id_unico(self) -> str:
         """La clave que va con UNIQUE en la base. Es lo único que impide cargar dos veces

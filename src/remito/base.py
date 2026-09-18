@@ -78,6 +78,20 @@ class Carga(str, Enum):
     YA_ESTABA = "ya_estaba"
 
 
+class ComprobanteSinIdentidad(ValueError):
+    """No se sabe qué comprobante es, así que no se puede saber si ya estaba.
+
+    Encontrado el 18/09/2026 probando el comando `procesar` de punta a punta: T0 no lee el
+    número de factura y deja "?" en los cuatro campos que forman la clave. Dos facturas
+    completamente distintas entraron como el mismo `?|?|?|?`: la primera se cargó, la
+    segunda dijo "ya estaba" y su mercadería no entró nunca. Sin un solo error a la vista.
+
+    La salida no es inventarle una clave -un hash del contenido haría que dos fotos del
+    mismo papel con una letra distinta de OCR se carguen dos veces, que es peor- sino
+    negarse, que es lo que hace el resto del proyecto cuando no sabe.
+    """
+
+
 # Segundos que un escritor espera el candado antes de rendirse con SQLITE_BUSY.
 # Generoso a propósito, y por eso con el número al lado: medido el 18/09/2026 en esta
 # máquina, 12 hilos cargando la misma factura esperaron 99 ms el peor y 19 ms la mediana.
@@ -110,6 +124,11 @@ def cargar(conn: sqlite3.Connection, c: Comprobante, v: Veredicto) -> Carga:
 
     `BEGIN IMMEDIATE` toma el candado de escritura antes del primer INSERT, no en el medio.
     """
+    if not c.identificable:
+        raise ComprobanteSinIdentidad(
+            f"faltan campos de identidad: {c.id_unico}. Sin saber qué comprobante es, "
+            "'ya estaba' no se puede distinguir de 'es otro'."
+        )
     conn.execute("BEGIN IMMEDIATE")
     try:
         cur = conn.execute(
